@@ -219,3 +219,153 @@ input::placeholder { color: rgba(240,237,232,0.28); }
   .print-only { display: block !important; }
 }
 .print-only { display: none; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE MOBILE — IBL Primeurs
+   ═══════════════════════════════════════ */
+
+/* Tablette */
+@media (max-width: 768px) {
+  main {
+    padding: 20px 16px !important;
+  }
+
+  /* KPI grid → 2 colonnes */
+  [style*="gridTemplateColumns: repeat(3"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Titres */
+  h1[style*="fontSize: 30"] {
+    font-size: 22px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  /* KPI grid → 1 colonne */
+  [style*="gridTemplateColumns: repeat(3"],
+  [style*="gridTemplateColumns: repeat(2"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  main {
+    padding: 16px 12px !important;
+  }
+}
+
+/* ─── NAVBAR MOBILE ─── */
+.navbar-links {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-shrink: 1;
+}
+
+.navbar-links::-webkit-scrollbar {
+  display: none;
+}
+
+.navbar-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .navbar-root {
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+
+  .navbar-logo-text {
+    display: none !important;
+  }
+
+  .navbar-actions .btn-export,
+  .navbar-actions .btn-import {
+    font-size: 0 !important;
+    padding: 7px 10px !important;
+    min-width: 36px;
+  }
+
+  .navbar-actions .btn-export::before { content: '↓'; font-size: 14px; }
+  .navbar-actions .btn-import::before { content: '↑'; font-size: 14px; }
+
+  .nav-link {
+    font-size: 12px !important;
+    padding: 7px 10px !important;
+    white-space: nowrap;
+  }
+}
+
+/* ─── CARDS MOBILE ─── */
+@media (max-width: 480px) {
+  .card {
+    padding: 16px 14px !important;
+  }
+
+  /* Boutons header → colonne */
+  .page-header-actions {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .page-header-actions button {
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Journée card → stack */
+  .journee-card-inner {
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  .journee-card-right {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  /* Profil employé */
+  .employe-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Charts */
+  .recharts-wrapper {
+    width: 100% !important;
+  }
+}
+
+/* ─── MODALS MOBILE ─── */
+@media (max-width: 480px) {
+  .modal-card {
+    width: calc(100vw - 32px) !important;
+    max-width: 100% !important;
+    margin: 0 16px;
+  }
+}
+
+/* ─── RAPPORT MOBILE ─── */
+@media (max-width: 600px) {
+  .no-print {
+    flex-wrap: wrap;
+  }
+}
+
+/* ─── PRODUCTION MOBILE ─── */
+@media (max-width: 480px) {
+  .progress-bar-container {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .camion-nav {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+}

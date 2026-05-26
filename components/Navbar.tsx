@@ -1,21 +1,19 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { loadData, saveData, AppData } from '@/lib/store'
-import { useToast } from './Toast'
-import { useRef } from 'react'
-
-const links = [
-  { href: '/', label: 'Session' },
-  { href: '/employes', label: 'Employés' },
-  { href: '/depenses', label: 'Dépenses' },
-  { href: '/production', label: 'Production' },
-]
+import { loadData, saveData } from '@/lib/store'
+import { useToast } from '@/components/Toast'
 
 export default function Navbar() {
-  const path = usePathname()
+  const pathname = usePathname()
   const toast = useToast()
-  const importRef = useRef<HTMLInputElement>(null)
+
+  const links = [
+    { href: '/', label: 'Session' },
+    { href: '/employes', label: 'Employés' },
+    { href: '/depenses', label: 'Dépenses' },
+    { href: '/production', label: 'Production' },
+  ]
 
   const exportData = () => {
     const data = loadData()
@@ -23,62 +21,96 @@ export default function Navbar() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `ibl-primeurs-backup-${new Date().toISOString().slice(0,10)}.json`
+    a.download = `ibl-primeurs-backup-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
     toast('Données exportées', 'success')
   }
 
-  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const parsed = JSON.parse(ev.target?.result as string) as AppData
-        saveData(parsed)
-        toast('Importé — rechargement...', 'success')
-        setTimeout(() => window.location.reload(), 1000)
-      } catch { toast('Fichier invalide', 'error') }
+  const importData = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target?.result as string)
+          saveData(data)
+          window.location.reload()
+          toast('Données importées', 'success')
+        } catch {
+          toast('Fichier invalide', 'error')
+        }
+      }
+      reader.readAsText(file)
     }
-    reader.readAsText(file)
-    e.target.value = ''
+    input.click()
   }
 
   return (
     <nav style={{
-      background: 'var(--forest-deep)', borderBottom: '2px solid var(--red)',
-      padding: '0 20px', display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', height: 60, position: 'sticky', top: 0, zIndex: 100,
-      boxShadow: '0 2px 20px rgba(0,0,0,0.4)',
+      background: 'var(--forest-deep)',
+      borderBottom: '2px solid var(--red)',
+      position: 'sticky', top: 0, zIndex: 100,
+      boxShadow: '0 2px 20px rgba(0,0,0,0.4)'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-        <div style={{ marginRight: 28, display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: 'white', fontFamily: 'Playfair Display, serif', boxShadow: '0 2px 12px rgba(232,49,42,0.45)' }}>I</div>
-          <div>
-            <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 13, color: 'var(--white)', lineHeight: 1.1 }}>IBL Primeurs</div>
-            <div style={{ fontSize: 9, color: 'var(--green)', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600 }}>Campagne Mangue</div>
+      <div className="navbar-root" style={{
+        maxWidth: 960, margin: '0 auto',
+        padding: '0 20px', height: 62,
+        display: 'flex', alignItems: 'center',
+        gap: 16, overflow: 'hidden'
+      }}>
+        {/* Logo */}
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 8,
+            background: 'var(--red)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'Playfair Display, serif', fontWeight: 700,
+            color: 'white', fontSize: 16, flexShrink: 0
+          }}>I</div>
+          <div className="navbar-logo-text">
+            <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 700, color: 'var(--white)', lineHeight: 1.1 }}>IBL Primeurs</div>
+            <div style={{ fontSize: 9, color: 'var(--green)', letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: 'DM Sans, sans-serif' }}>Campagne Mangue</div>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: 2 }}>
+        </Link>
+
+        {/* Nav links — scrollable on mobile */}
+        <div className="navbar-links" style={{ flex: 1 }}>
           {links.map(l => {
-            const active = path === l.href
+            const active = pathname === l.href
             return (
-              <Link key={l.href} href={l.href} style={{
-                padding: '6px 14px', borderRadius: 7, textDecoration: 'none',
-                fontWeight: active ? 600 : 400, fontSize: 13,
-                color: active ? 'white' : 'var(--gray)',
+              <Link key={l.href} href={l.href} className="nav-link" style={{
+                padding: '8px 14px', borderRadius: 8,
+                fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600,
+                textDecoration: 'none', whiteSpace: 'nowrap',
                 background: active ? 'var(--red)' : 'transparent',
-                transition: 'all 0.2s', boxShadow: active ? '0 2px 10px rgba(232,49,42,0.3)' : 'none',
+                color: active ? 'white' : 'var(--gray)',
+                transition: 'all 0.18s',
+                boxShadow: active ? '0 2px 10px rgba(232,49,42,0.35)' : 'none'
               }}>{l.label}</Link>
             )
           })}
         </div>
-      </div>
-      <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-        <input ref={importRef} type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
-        <button onClick={() => importRef.current?.click()} style={{ padding: '6px 12px', borderRadius: 7, cursor: 'pointer', background: 'var(--forest-mid)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--gray)', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>↑ Importer</button>
-        <button onClick={exportData} style={{ padding: '6px 12px', borderRadius: 7, cursor: 'pointer', background: 'var(--forest-mid)', border: '1px solid rgba(61,176,106,0.25)', color: 'var(--green)', fontSize: 12, fontFamily: 'DM Sans, sans-serif', fontWeight: 600 }}>↓ Exporter</button>
+
+        {/* Actions */}
+        <div className="navbar-actions" style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          <button onClick={importData} className="btn-import" style={{
+            padding: '7px 12px', borderRadius: 7, cursor: 'pointer',
+            background: 'var(--forest-mid)', border: '1px solid rgba(255,255,255,0.08)',
+            color: 'var(--gray)', fontFamily: 'DM Sans, sans-serif', fontSize: 12,
+            transition: 'all 0.18s'
+          }}>↑ Importer</button>
+          <button onClick={exportData} className="btn-export" style={{
+            padding: '7px 12px', borderRadius: 7, cursor: 'pointer',
+            background: 'var(--forest-mid)', border: '1px solid rgba(61,176,106,0.2)',
+            color: 'var(--green)', fontFamily: 'DM Sans, sans-serif', fontSize: 12,
+            transition: 'all 0.18s'
+          }}>↓ Exporter</button>
+        </div>
       </div>
     </nav>
   )

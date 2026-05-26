@@ -1,0 +1,22 @@
+{
+  "name": "IBL Primeurs — Campagne Mangue",
+  "short_name": "IBL Primeurs",
+  "description": "Gestion paie et production mangue",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d2818",
+  "theme_color": "#0d2818",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

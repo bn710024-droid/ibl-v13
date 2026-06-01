@@ -427,19 +427,15 @@ export default function SessionPage() {
                     <thead>
                       <tr style={{ color: 'var(--gray-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Employé</th>
-                        <th style={{ textAlign: 'center', padding: '4px 8px', fontWeight: 600 }}>Jours</th>
-                        <th style={{ textAlign: 'right', padding: '4px 8px', fontWeight: 600 }}>Taux</th>
+                        <th style={{ textAlign: 'right', padding: '4px 8px', fontWeight: 600 }}>Taux de présence</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {statsEmployes.map(({ e, joursPresents, joursActifs, taux }) => (
+                      {statsEmployes.map(({ e, taux }) => (
                         <tr key={e.id} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                           <td style={{ padding: '6px 8px', color: 'var(--cream)' }}>
                             {e.prenom} {e.nom}
                             <span style={{ fontSize: 10, color: 'var(--gray-dim)', marginLeft: 6 }}>{e.genre === 'H' ? '♂' : '♀'}</span>
-                          </td>
-                          <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--gray)' }}>
-                            {joursPresents} / {joursActifs}
                           </td>
                           <td style={{ padding: '6px 8px', textAlign: 'right' }}>
                             <span style={{

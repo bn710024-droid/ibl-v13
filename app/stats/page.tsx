@@ -91,12 +91,6 @@ export default function StatsPage() {
             </p>
           </div>
 
-          {/* Bandeau explicatif */}
-          <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '12px 18px', marginBottom: 20, fontSize: 12, color: 'rgba(245,240,232,0.55)', lineHeight: 1.7 }}>
-            <strong style={{ color: 'var(--green)' }}>Comment lire ces statistiques ?</strong><br/>
-            Cette page regroupe <strong style={{ color: 'var(--cream)' }}>toutes les données RH</strong> de la campagne. Les KPIs montrent les effectifs et les présences globales. Le <strong style={{ color: 'var(--cream)' }}>graphique "Hommes vs Femmes"</strong> affiche les présences jour par jour — cliquez sur un point pour voir la liste nominale des présents et absents ce jour-là. Le <strong style={{ color: 'var(--cream)' }}>tableau de classement</strong> trie tous les employés du meilleur taux de présence au plus faible, avec leurs gains cumulés.
-          </div>
-
           {/* KPIs effectifs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
             {[
@@ -113,11 +107,10 @@ export default function StatsPage() {
           </div>
 
           {/* KPIs présences + taux */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
             {[
               { label: 'Présences hommes', value: presencesH, color: '#3db06a' },
               { label: 'Présences femmes', value: presencesF, color: '#52d485' },
-              { label: 'Total présences', value: totalPresences, color: 'var(--red-bright)' },
               { label: 'Taux global', value: totalPossible > 0 ? `${Math.round((totalPresences / totalPossible) * 100)}%` : '—', color: 'var(--gold)' },
             ].map((s, i) => (
               <div key={i} className="card" style={{ padding: '18px', textAlign: 'center' }}>

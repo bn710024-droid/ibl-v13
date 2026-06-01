@@ -363,12 +363,82 @@ export default function EmployesPage() {
     `${e.prenom} ${e.nom}`.toLowerCase().includes(search.toLowerCase())
   )
 
+  const hommes = data.employes.filter(e => e.genre === 'H')
+  const femmes = data.employes.filter(e => e.genre === 'F')
+  const sortedJournees = [...data.journees].sort((a, b) => a.date.localeCompare(b.date))
+  const presencesH = sortedJournees.reduce((acc, j) => acc + hommes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)
+  const presencesF = sortedJournees.reduce((acc, j) => acc + femmes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)
+  const courbeGenerale = sortedJournees.map(j => ({
+    date: j.date.slice(5),
+    Hommes: hommes.filter(e => getStatutEmployeJournee(e, j) === 'present').length,
+    Femmes: femmes.filter(e => getStatutEmployeJournee(e, j) === 'present').length,
+  }))
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--forest-deep)' }}>
       <Navbar />
       <PageWrapper>
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px', display: 'grid', gridTemplateColumns: selected ? '300px 1fr' : '1fr', gap: 22 }}>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
 
+        {/* Statistiques générales */}
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: 'var(--white)', marginBottom: 14 }}>Statistiques générales</h2>
+
+          {/* KPIs effectifs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }}>
+            {[
+              { label: 'Total employés', value: data.employes.length, color: 'var(--white)', stripe: 'stripe-white' },
+              { label: 'Hommes', value: hommes.length, color: '#3db06a', stripe: 'stripe-green' },
+              { label: 'Femmes', value: femmes.length, color: '#52d485', stripe: 'stripe-green' },
+              { label: 'Journées', value: data.journees.length, color: 'var(--gold)', stripe: 'stripe-white' },
+            ].map((s, i) => (
+              <div key={i} className={`card ${s.stripe}`} style={{ padding: '14px', textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontFamily: 'Playfair Display, serif', color: s.color, fontWeight: 700 }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* KPIs présences */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>
+            {[
+              { label: 'Présences hommes', value: presencesH, color: '#3db06a' },
+              { label: 'Présences femmes', value: presencesF, color: '#52d485' },
+              { label: 'Total présences', value: presencesH + presencesF, color: 'var(--red-bright)' },
+            ].map((s, i) => (
+              <div key={i} className="card" style={{ padding: '14px', textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontFamily: 'Playfair Display, serif', color: s.color, fontWeight: 700 }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Courbe présences H vs F */}
+          <div className="card" style={{ padding: '16px' }}>
+            <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Présences par jour — Hommes vs Femmes</div>
+            {courbeGenerale.length === 0 ? (
+              <div style={{ color: 'var(--gray-dim)', fontSize: 12, padding: '16px 0' }}>Aucune journée enregistrée</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={140}>
+                <LineChart data={courbeGenerale}>
+                  <XAxis dataKey="date" tick={{ fill: 'rgba(240,237,232,0.35)', fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, color: 'var(--cream)', fontSize: 11 }}
+                  />
+                  <Line type="monotone" dataKey="Hommes" stroke="#3db06a" strokeWidth={2.5} dot={false} />
+                  <Line type="monotone" dataKey="Femmes" stroke="#52d485" strokeWidth={2.5} dot={false} strokeDasharray="5 3" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+            <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11 }}>
+              <span style={{ color: '#3db06a' }}>— Hommes</span>
+              <span style={{ color: '#52d485' }}>– – Femmes</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: selected ? '300px 1fr' : '1fr', gap: 22 }}>
         {/* Liste */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -451,6 +521,7 @@ export default function EmployesPage() {
             <ProfileView e={selected} />
           </div>
         )}
+        </div>
       </main>
       </PageWrapper>
       {showAdd && (

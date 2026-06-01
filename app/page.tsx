@@ -434,7 +434,6 @@ export default function SessionPage() {
                         <tr key={e.id} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                           <td style={{ padding: '6px 8px', color: 'var(--cream)' }}>
                             {e.prenom} {e.nom}
-                            <span style={{ fontSize: 10, color: 'var(--gray-dim)', marginLeft: 6 }}>{e.genre === 'H' ? '♂' : '♀'}</span>
                           </td>
                           <td style={{ padding: '6px 8px', textAlign: 'right' }}>
                             <span style={{

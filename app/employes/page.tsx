@@ -434,22 +434,24 @@ export default function EmployesPage() {
               <ResponsiveContainer width="100%" height={140}>
                 <LineChart
                   data={courbeGenerale}
-                  onClick={(chartData: unknown) => {
-                    const d = chartData as { activePayload?: { payload: { fullDate: string } }[] }
-                    if (d?.activePayload?.[0]) {
-                      const fd = d.activePayload[0].payload.fullDate
-                      setJourClique(prev => prev === fd ? null : fd)
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
                 >
                   <XAxis dataKey="date" tick={{ fill: 'rgba(240,237,232,0.35)', fontSize: 9 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip
                     contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, color: 'var(--cream)', fontSize: 11 }}
                   />
-                  <Line type="monotone" dataKey="Hommes" stroke="#3db06a" strokeWidth={2.5} dot={{ r: 3, fill: '#3db06a' }} activeDot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="Femmes" stroke="#52d485" strokeWidth={2.5} dot={{ r: 3, fill: '#52d485' }} activeDot={{ r: 5 }} strokeDasharray="5 3" />
+                  <Line
+                    type="monotone" dataKey="Hommes" stroke="#3db06a" strokeWidth={2.5}
+                    dot={{ r: 6, fill: '#3db06a', cursor: 'pointer', strokeWidth: 0 }}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    activeDot={{ r: 9, cursor: 'pointer', onClick: (_: any, p: any) => setJourClique((prev) => prev === p.payload.fullDate ? null : p.payload.fullDate) }}
+                  />
+                  <Line
+                    type="monotone" dataKey="Femmes" stroke="#52d485" strokeWidth={2.5} strokeDasharray="5 3"
+                    dot={{ r: 6, fill: '#52d485', cursor: 'pointer', strokeWidth: 0 }}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    activeDot={{ r: 9, cursor: 'pointer', onClick: (_: any, p: any) => setJourClique((prev) => prev === p.payload.fullDate ? null : p.payload.fullDate) }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             )}

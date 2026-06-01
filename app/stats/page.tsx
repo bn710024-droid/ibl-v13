@@ -8,7 +8,7 @@ import {
 } from '@/lib/store'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, Legend
+  BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts'
 
 export default function StatsPage() {
@@ -235,11 +235,14 @@ export default function StatsPage() {
                   <XAxis dataKey="name" tick={{ fill: 'rgba(240,237,232,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, color: 'var(--cream)', fontSize: 11 }} />
-                  <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(245,240,232,0.5)' }} />
                   <Bar dataKey="Hommes" fill="#3db06a" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Femmes" fill="#52d485" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11 }}>
+                <span style={{ color: '#3db06a' }}>■ Hommes</span>
+                <span style={{ color: '#52d485' }}>■ Femmes</span>
+              </div>
             </div>
           )}
 

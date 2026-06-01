@@ -251,6 +251,7 @@ export default function StatsPage() {
                 <tr style={{ color: 'var(--gray-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                   <th style={{ textAlign: 'left', padding: '6px 10px', fontWeight: 600 }}>#</th>
                   <th style={{ textAlign: 'left', padding: '6px 10px', fontWeight: 600 }}>Employé</th>
+                  <th style={{ textAlign: 'center', padding: '6px 10px', fontWeight: 600 }}>Genre</th>
                   <th style={{ textAlign: 'center', padding: '6px 10px', fontWeight: 600 }}>Embauché le</th>
                   <th style={{ textAlign: 'center', padding: '6px 10px', fontWeight: 600 }}>Jours</th>
                   <th style={{ textAlign: 'right', padding: '6px 10px', fontWeight: 600 }}>Taux</th>
@@ -264,6 +265,9 @@ export default function StatsPage() {
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                     </td>
                     <td style={{ padding: '9px 10px', color: 'var(--cream)', fontWeight: 500 }}>{e.prenom} {e.nom}</td>
+                    <td style={{ padding: '9px 10px', textAlign: 'center', color: e.genre === 'H' ? '#3db06a' : '#52d485', fontSize: 12, fontWeight: 600 }}>
+                      {e.genre === 'H' ? 'Homme' : 'Femme'}
+                    </td>
                     <td style={{ padding: '9px 10px', textAlign: 'center', color: 'var(--gray-dim)', fontSize: 11 }}>
                       {formatDate(e.dateEmbauche || e.dateAjout)}
                     </td>

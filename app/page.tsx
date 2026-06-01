@@ -412,7 +412,6 @@ export default function SessionPage() {
                     <Tooltip contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, fontSize: 11 }} />
                   </PieChart>
                   <div style={{ fontSize: 22, fontFamily: 'Playfair Display, serif', color: 'var(--green)', fontWeight: 700, marginTop: 4 }}>{tauxGlobal}%</div>
-                  <div style={{ fontSize: 10, color: 'var(--gray-dim)', marginTop: 2 }}>{totalPresences} / {totalPossible} j.</div>
                   {badge && (
                     <div style={{ marginTop: 10, padding: '4px 10px', borderRadius: 20, background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color, fontSize: 11, fontWeight: 600, textAlign: 'center' }}>
                       {badge.label}

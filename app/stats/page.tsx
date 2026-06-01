@@ -204,7 +204,6 @@ export default function StatsPage() {
                 {totalPossible > 0 ? `${Math.round((totalPresences / totalPossible) * 100)}%` : '—'}
               </div>
               <div style={{ fontSize: 10, color: 'var(--gray-dim)', marginTop: 4, textAlign: 'center' }}>
-                {totalPresences} / {totalPossible} jours-présence
               </div>
               <div style={{ marginTop: 14, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>

@@ -434,9 +434,10 @@ export default function EmployesPage() {
               <ResponsiveContainer width="100%" height={140}>
                 <LineChart
                   data={courbeGenerale}
-                  onClick={(chartData) => {
-                    if (chartData?.activePayload?.[0]) {
-                      const fd = (chartData.activePayload[0].payload as { fullDate: string }).fullDate
+                  onClick={(chartData: unknown) => {
+                    const d = chartData as { activePayload?: { payload: { fullDate: string } }[] }
+                    if (d?.activePayload?.[0]) {
+                      const fd = d.activePayload[0].payload.fullDate
                       setJourClique(prev => prev === fd ? null : fd)
                     }
                   }}

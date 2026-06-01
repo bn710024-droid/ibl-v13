@@ -11,6 +11,7 @@ export default function Navbar() {
   const links = [
     { href: '/', label: 'Session' },
     { href: '/employes', label: 'Employés' },
+    { href: '/stats', label: 'Statistiques' },
     { href: '/depenses', label: 'Dépenses' },
     { href: '/production', label: 'Production' },
   ]

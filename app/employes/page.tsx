@@ -9,6 +9,7 @@ import {
   verifierPin, getStatutEmployeJournee, getMontantJournee
 } from '@/lib/store'
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+// recharts utilisé dans ProfileView (courbe paiement cumulé + donut présence)
 
 export default function EmployesPage() {
   const [data, setData] = useState<AppData | null>(null)
@@ -18,7 +19,6 @@ export default function EmployesPage() {
   const [nom, setNom] = useState('')
   const [prenom, setPrenom] = useState('')
   const [genre, setGenre] = useState<'H' | 'F'>('H')
-  const [jourClique, setJourClique] = useState<string | null>(null)
   const toast = useToast()
 
   // Modifier profil
@@ -373,132 +373,11 @@ export default function EmployesPage() {
     `${e.prenom} ${e.nom}`.toLowerCase().includes(search.toLowerCase())
   )
 
-  const hommes = data.employes.filter(e => e.genre === 'H')
-  const femmes = data.employes.filter(e => e.genre === 'F')
-  const sortedJournees = [...data.journees].sort((a, b) => a.date.localeCompare(b.date))
-  const presencesH = sortedJournees.reduce((acc, j) => acc + hommes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)
-  const presencesF = sortedJournees.reduce((acc, j) => acc + femmes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)
-  const courbeGenerale = sortedJournees.map(j => ({
-    date: j.date.slice(5),
-    fullDate: j.date,
-    Hommes: hommes.filter(e => getStatutEmployeJournee(e, j) === 'present').length,
-    Femmes: femmes.filter(e => getStatutEmployeJournee(e, j) === 'present').length,
-  }))
-
   return (
     <div style={{ minHeight: '100vh', background: 'var(--forest-deep)' }}>
       <Navbar />
       <PageWrapper>
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
-
-        {/* Statistiques générales */}
-        <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: 'var(--white)', marginBottom: 14 }}>Statistiques générales</h2>
-
-          {/* KPIs effectifs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }}>
-            {[
-              { label: 'Total employés', value: data.employes.length, color: 'var(--white)', stripe: 'stripe-white' },
-              { label: 'Hommes', value: hommes.length, color: '#3db06a', stripe: 'stripe-green' },
-              { label: 'Femmes', value: femmes.length, color: '#52d485', stripe: 'stripe-green' },
-              { label: 'Journées', value: data.journees.length, color: 'var(--gold)', stripe: 'stripe-white' },
-            ].map((s, i) => (
-              <div key={i} className={`card ${s.stripe}`} style={{ padding: '14px', textAlign: 'center' }}>
-                <div style={{ fontSize: 24, fontFamily: 'Playfair Display, serif', color: s.color, fontWeight: 700 }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* KPIs présences */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>
-            {[
-              { label: 'Présences hommes', value: presencesH, color: '#3db06a' },
-              { label: 'Présences femmes', value: presencesF, color: '#52d485' },
-              { label: 'Total présences', value: presencesH + presencesF, color: 'var(--red-bright)' },
-            ].map((s, i) => (
-              <div key={i} className="card" style={{ padding: '14px', textAlign: 'center' }}>
-                <div style={{ fontSize: 22, fontFamily: 'Playfair Display, serif', color: s.color, fontWeight: 700 }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Courbe présences H vs F */}
-          <div className="card" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Présences par jour — Hommes vs Femmes</div>
-            <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)', marginBottom: 10 }}>Cliquez sur un point pour voir le détail du jour</div>
-            {courbeGenerale.length === 0 ? (
-              <div style={{ color: 'var(--gray-dim)', fontSize: 12, padding: '16px 0' }}>Aucune journée enregistrée</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={140}>
-                <LineChart
-                  data={courbeGenerale}
-                >
-                  <XAxis dataKey="date" tick={{ fill: 'rgba(240,237,232,0.35)', fontSize: 9 }} axisLine={false} tickLine={false} />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, color: 'var(--cream)', fontSize: 11 }}
-                  />
-                  <Line
-                    type="monotone" dataKey="Hommes" stroke="#3db06a" strokeWidth={2.5}
-                    dot={{ r: 6, fill: '#3db06a', cursor: 'pointer', strokeWidth: 0 }}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    activeDot={{ r: 9, cursor: 'pointer', onClick: (_: any, p: any) => setJourClique((prev) => prev === p.payload.fullDate ? null : p.payload.fullDate) }}
-                  />
-                  <Line
-                    type="monotone" dataKey="Femmes" stroke="#52d485" strokeWidth={2.5} strokeDasharray="5 3"
-                    dot={{ r: 6, fill: '#52d485', cursor: 'pointer', strokeWidth: 0 }}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    activeDot={{ r: 9, cursor: 'pointer', onClick: (_: any, p: any) => setJourClique((prev) => prev === p.payload.fullDate ? null : p.payload.fullDate) }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-            <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11 }}>
-              <span style={{ color: '#3db06a' }}>— Hommes</span>
-              <span style={{ color: '#52d485' }}>– – Femmes</span>
-            </div>
-
-            {/* Panel détail jour cliqué */}
-            {jourClique && (() => {
-              const journee = sortedJournees.find(j => j.date === jourClique)
-              if (!journee) return null
-              const actifs = data.employes.filter(e => getStatutEmployeJournee(e, journee) !== 'na')
-              const presentsH = actifs.filter(e => e.genre === 'H' && getStatutEmployeJournee(e, journee) === 'present')
-              const presentsF = actifs.filter(e => e.genre === 'F' && getStatutEmployeJournee(e, journee) === 'present')
-              const absentsJ  = actifs.filter(e => getStatutEmployeJournee(e, journee) === 'absent')
-              return (
-                <div className="fade-in" style={{ marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 14 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <span style={{ fontSize: 13, color: 'var(--white)', fontWeight: 600 }}>📅 {formatDate(jourClique)}</span>
-                    <span style={{ fontSize: 12, color: 'var(--green)' }}>{presentsH.length + presentsF.length} / {actifs.length} présents</span>
-                    <button onClick={() => setJourClique(null)} style={{ background: 'transparent', border: 'none', color: 'var(--gray-dim)', cursor: 'pointer', fontSize: 14 }}>✕</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div>
-                      <div style={{ fontSize: 10, color: '#3db06a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>♂ Hommes présents ({presentsH.length})</div>
-                      {presentsH.map(e => (
-                        <div key={e.id} style={{ fontSize: 12, color: 'var(--cream)', padding: '3px 0' }}>✓ {e.prenom} {e.nom}</div>
-                      ))}
-                      <div style={{ fontSize: 10, color: '#52d485', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 8, marginBottom: 6 }}>♀ Femmes présentes ({presentsF.length})</div>
-                      {presentsF.map(e => (
-                        <div key={e.id} style={{ fontSize: 12, color: 'var(--cream)', padding: '3px 0' }}>✓ {e.prenom} {e.nom}</div>
-                      ))}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Absents ({absentsJ.length})</div>
-                      {absentsJ.map(e => (
-                        <div key={e.id} style={{ fontSize: 12, color: 'var(--gray-dim)', padding: '3px 0' }}>✕ {e.prenom} {e.nom}</div>
-                      ))}
-                      {absentsJ.length === 0 && <div style={{ fontSize: 12, color: 'var(--gray-dim)' }}>Aucun absent 🎉</div>}
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: selected ? '300px 1fr' : '1fr', gap: 22 }}>
         {/* Liste */}

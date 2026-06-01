@@ -382,9 +382,13 @@ export default function EmployesPage() {
         <div style={{ display: 'grid', gridTemplateColumns: selected ? '300px 1fr' : '1fr', gap: 22 }}>
         {/* Liste */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, color: 'var(--white)' }}>Employés</h1>
             <button className="btn-primary ripple" onClick={() => setShowAdd(true)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13 }}>+ Ajouter</button>
+          </div>
+          <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '11px 16px', marginBottom: 14, fontSize: 12, color: 'rgba(245,240,232,0.55)', lineHeight: 1.7 }}>
+            <strong style={{ color: 'var(--green)' }}>Comment utiliser cette page ?</strong><br/>
+            Cliquez sur un employé pour voir son <strong style={{ color: 'var(--cream)' }}>profil complet</strong> : présences, gains et graphiques par session. Utilisez <strong style={{ color: 'var(--cream)' }}>✏ Modifier</strong> pour changer son nom, genre ou taux individuel (PIN requis). Le bouton <strong style={{ color: 'var(--cream)' }}>↑ Marquer sortie</strong> enregistre la date de fin de contrat. Un nouvel employé commence avec <strong style={{ color: 'var(--cream)' }}>0 présence</strong> — marquez-le présent manuellement depuis la page Session.
           </div>
 
           {/* Barre de recherche */}

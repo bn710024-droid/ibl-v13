@@ -114,7 +114,7 @@ export default function DepensesPage() {
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '28px 20px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, color: 'var(--white)' }}>Dépenses</h1>
             <p style={{ color: 'var(--gray)', marginTop: 4, fontSize: 13 }}>Suivi financier par camion · par jour</p>
@@ -123,6 +123,12 @@ export default function DepensesPage() {
             <button className="btn-primary ripple" onClick={() => { setEditDepense(null); resetForm(); setShowAdd(true) }}
               style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>+ Dépense manuelle</button>
           )}
+        </div>
+
+        {/* Bandeau explicatif */}
+        <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '12px 18px', marginBottom: 18, fontSize: 12, color: 'rgba(245,240,232,0.55)', lineHeight: 1.7 }}>
+          <strong style={{ color: 'var(--green)' }}>Comment fonctionne cette page ?</strong><br/>
+          Les dépenses sont organisées par <strong style={{ color: 'var(--cream)' }}>camion</strong>. Les lignes marquées <strong style={{ color: 'var(--green)' }}>Auto 🥭</strong> sont créées automatiquement depuis la page Production (achats mangues) — seul le <strong style={{ color: 'var(--cream)' }}>prix/kg</strong> est à renseigner. Ajoutez des <strong style={{ color: 'var(--cream)' }}>dépenses manuelles</strong> pour les frais fixes (transport, carburant…) ou les achats en kg avec un prix unitaire.
         </div>
 
         {/* Navigation camions */}

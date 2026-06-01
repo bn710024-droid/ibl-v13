@@ -211,7 +211,7 @@ export default function SessionPage() {
       <main style={{ maxWidth: 960, margin: '0 auto', padding: '32px 24px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div>
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 30, color: 'var(--white)', lineHeight: 1.1 }}>
               Campagne Mangue
@@ -238,6 +238,15 @@ export default function SessionPage() {
                 + Journée
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Bandeau explicatif */}
+        <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '12px 18px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>ℹ️</span>
+          <div style={{ fontSize: 12, color: 'rgba(245,240,232,0.6)', lineHeight: 1.7 }}>
+            <strong style={{ color: 'var(--green)', display: 'block', marginBottom: 2 }}>Comment fonctionne cette page ?</strong>
+            Une <strong style={{ color: 'var(--cream)' }}>session RH</strong> regroupe jusqu'à <strong style={{ color: 'var(--cream)' }}>15 journées de travail</strong>. Chaque journée enregistre les absences des employés — par défaut, tous sont présents. À 15 jours, fermez la session pour en ouvrir une nouvelle. Les <strong style={{ color: 'var(--cream)' }}>KPIs</strong> ci-dessous résument la session en cours : nombre d'employés, journées travaillées et montant total à payer.
           </div>
         </div>
 
@@ -450,9 +459,12 @@ export default function SessionPage() {
 
         {/* Journées */}
         <div>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 14, color: 'var(--white)' }}>
+          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--white)' }}>
             Journées — Session {sessionAffichee?.numero}
           </h2>
+          <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.4)', marginBottom: 14 }}>
+            Chaque ligne représente une journée de travail. Cliquez sur <strong style={{ color: 'var(--gold)' }}>⚡ Bonus</strong> pour ajouter une prime exceptionnelle ce jour-là. Le bouton <strong style={{ color: 'var(--red-bright)' }}>✕</strong> supprime définitivement la journée.
+          </p>
           {journeesSession.length === 0 ? (
             <div className="card" style={{ padding: 36, textAlign: 'center', color: 'rgba(245,240,232,0.3)' }}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>

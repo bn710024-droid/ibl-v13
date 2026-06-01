@@ -106,16 +106,17 @@ export default function StatsPage() {
             ))}
           </div>
 
-          {/* KPIs présences + taux */}
+          {/* KPIs taux de présence */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
             {[
-              { label: 'Présences hommes', value: presencesH, color: '#3db06a' },
-              { label: 'Présences femmes', value: presencesF, color: '#52d485' },
-              { label: 'Taux global', value: totalPossible > 0 ? `${Math.round((totalPresences / totalPossible) * 100)}%` : '—', color: 'var(--gold)' },
+              { label: 'Taux de présence — Hommes', value: `${tauxH}%`, color: '#3db06a', sub: `${presencesH} / ${totalPossibleH} jours` },
+              { label: 'Taux de présence — Femmes', value: `${tauxF}%`, color: '#52d485', sub: `${presencesF} / ${totalPossibleF} jours` },
+              { label: 'Taux de présence global', value: totalPossible > 0 ? `${Math.round((totalPresences / totalPossible) * 100)}%` : '—', color: 'var(--gold)', sub: `${totalPresences} / ${totalPossible} jours` },
             ].map((s, i) => (
               <div key={i} className="card" style={{ padding: '18px', textAlign: 'center' }}>
-                <div style={{ fontSize: 26, fontFamily: 'Playfair Display, serif', color: s.color, fontWeight: 700 }}>{s.value}</div>
+                <div style={{ fontSize: 30, fontFamily: 'Playfair Display, serif', color: s.color, fontWeight: 700 }}>{s.value}</div>
                 <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 5 }}>{s.label}</div>
+                <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)', marginTop: 4 }}>{s.sub}</div>
               </div>
             ))}
           </div>

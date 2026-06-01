@@ -18,6 +18,7 @@ export default function EmployesPage() {
   const [nom, setNom] = useState('')
   const [prenom, setPrenom] = useState('')
   const [genre, setGenre] = useState<'H' | 'F'>('H')
+  const [jourClique, setJourClique] = useState<string | null>(null)
   const toast = useToast()
 
   // Modifier profil
@@ -40,8 +41,17 @@ export default function EmployesPage() {
 
   const addEmploye = () => {
     if (!nom.trim() || !prenom.trim()) return
-    const e: Employe = { id: genId(), nom: nom.trim(), prenom: prenom.trim(), genre, dateAjout: new Date().toISOString().slice(0,10) }
-    const updated = { ...data, employes: [...data.employes, e] }
+    const today = new Date().toISOString().slice(0, 10)
+    const e: Employe = { id: genId(), nom: nom.trim(), prenom: prenom.trim(), genre, dateAjout: today, dateEmbauche: today }
+    // Ajouter l'employé comme absent sur toutes les journées existantes → 0 présence automatique
+    const updated = {
+      ...data,
+      employes: [...data.employes, e],
+      journees: data.journees.map(j => ({
+        ...j,
+        absents: j.absents.includes(e.id) ? j.absents : [...j.absents, e.id]
+      }))
+    }
     setData(updated); saveData(updated)
     setNom(''); setPrenom(''); setGenre('H'); setShowAdd(false)
     toast(`${e.prenom} ${e.nom} ajouté(e)`, 'success')
@@ -370,6 +380,7 @@ export default function EmployesPage() {
   const presencesF = sortedJournees.reduce((acc, j) => acc + femmes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)
   const courbeGenerale = sortedJournees.map(j => ({
     date: j.date.slice(5),
+    fullDate: j.date,
     Hommes: hommes.filter(e => getStatutEmployeJournee(e, j) === 'present').length,
     Femmes: femmes.filter(e => getStatutEmployeJournee(e, j) === 'present').length,
   }))
@@ -415,19 +426,29 @@ export default function EmployesPage() {
 
           {/* Courbe présences H vs F */}
           <div className="card" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Présences par jour — Hommes vs Femmes</div>
+            <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Présences par jour — Hommes vs Femmes</div>
+            <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)', marginBottom: 10 }}>Cliquez sur un point pour voir le détail du jour</div>
             {courbeGenerale.length === 0 ? (
               <div style={{ color: 'var(--gray-dim)', fontSize: 12, padding: '16px 0' }}>Aucune journée enregistrée</div>
             ) : (
               <ResponsiveContainer width="100%" height={140}>
-                <LineChart data={courbeGenerale}>
+                <LineChart
+                  data={courbeGenerale}
+                  onClick={(chartData) => {
+                    if (chartData?.activePayload?.[0]) {
+                      const fd = (chartData.activePayload[0].payload as { fullDate: string }).fullDate
+                      setJourClique(prev => prev === fd ? null : fd)
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <XAxis dataKey="date" tick={{ fill: 'rgba(240,237,232,0.35)', fontSize: 9 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip
                     contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, color: 'var(--cream)', fontSize: 11 }}
                   />
-                  <Line type="monotone" dataKey="Hommes" stroke="#3db06a" strokeWidth={2.5} dot={false} />
-                  <Line type="monotone" dataKey="Femmes" stroke="#52d485" strokeWidth={2.5} dot={false} strokeDasharray="5 3" />
+                  <Line type="monotone" dataKey="Hommes" stroke="#3db06a" strokeWidth={2.5} dot={{ r: 3, fill: '#3db06a' }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="Femmes" stroke="#52d485" strokeWidth={2.5} dot={{ r: 3, fill: '#52d485' }} activeDot={{ r: 5 }} strokeDasharray="5 3" />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -435,6 +456,44 @@ export default function EmployesPage() {
               <span style={{ color: '#3db06a' }}>— Hommes</span>
               <span style={{ color: '#52d485' }}>– – Femmes</span>
             </div>
+
+            {/* Panel détail jour cliqué */}
+            {jourClique && (() => {
+              const journee = sortedJournees.find(j => j.date === jourClique)
+              if (!journee) return null
+              const actifs = data.employes.filter(e => getStatutEmployeJournee(e, journee) !== 'na')
+              const presentsH = actifs.filter(e => e.genre === 'H' && getStatutEmployeJournee(e, journee) === 'present')
+              const presentsF = actifs.filter(e => e.genre === 'F' && getStatutEmployeJournee(e, journee) === 'present')
+              const absentsJ  = actifs.filter(e => getStatutEmployeJournee(e, journee) === 'absent')
+              return (
+                <div className="fade-in" style={{ marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontSize: 13, color: 'var(--white)', fontWeight: 600 }}>📅 {formatDate(jourClique)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--green)' }}>{presentsH.length + presentsF.length} / {actifs.length} présents</span>
+                    <button onClick={() => setJourClique(null)} style={{ background: 'transparent', border: 'none', color: 'var(--gray-dim)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: '#3db06a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>♂ Hommes présents ({presentsH.length})</div>
+                      {presentsH.map(e => (
+                        <div key={e.id} style={{ fontSize: 12, color: 'var(--cream)', padding: '3px 0' }}>✓ {e.prenom} {e.nom}</div>
+                      ))}
+                      <div style={{ fontSize: 10, color: '#52d485', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 8, marginBottom: 6 }}>♀ Femmes présentes ({presentsF.length})</div>
+                      {presentsF.map(e => (
+                        <div key={e.id} style={{ fontSize: 12, color: 'var(--cream)', padding: '3px 0' }}>✓ {e.prenom} {e.nom}</div>
+                      ))}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Absents ({absentsJ.length})</div>
+                      {absentsJ.map(e => (
+                        <div key={e.id} style={{ fontSize: 12, color: 'var(--gray-dim)', padding: '3px 0' }}>✕ {e.prenom} {e.nom}</div>
+                      ))}
+                      {absentsJ.length === 0 && <div style={{ fontSize: 12, color: 'var(--gray-dim)' }}>Aucun absent 🎉</div>}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
 
@@ -498,7 +557,7 @@ export default function EmployesPage() {
                         <div>
                           <div style={{ fontWeight: 600, color: 'var(--white)', fontSize: 13 }}>{e.prenom} {e.nom}</div>
                           <div style={{ fontSize: 11, color: 'var(--gray-dim)' }}>
-                            {e.genre === 'H' ? '♂' : '♀'} · {joursP}j présent
+                            {e.genre === 'H' ? '♂' : '♀'} · {joursP}j présent · embauché le {formatDate(e.dateEmbauche || e.dateAjout)}
                           </div>
                         </div>
                       </div>

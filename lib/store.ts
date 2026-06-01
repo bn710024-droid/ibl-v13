@@ -4,6 +4,7 @@ export interface Employe {
   prenom: string
   genre: 'H' | 'F'
   dateAjout: string
+  dateEmbauche?: string   // date réelle d'embauche (= dateAjout si non renseigné)
   dateSortie?: string
   tauxIndividuel?: number
 }
@@ -114,7 +115,8 @@ export function genId(): string {
 export type StatutJournee = 'present' | 'absent' | 'na'
 
 export function getStatutEmployeJournee(e: Employe, j: Journee): StatutJournee {
-  if (j.date < e.dateAjout) return 'na'
+  const embauche = e.dateEmbauche || e.dateAjout
+  if (j.date < embauche) return 'na'
   if (e.dateSortie && j.date > e.dateSortie) return 'na'
   if (j.absents.includes(e.id)) return 'absent'
   return 'present'

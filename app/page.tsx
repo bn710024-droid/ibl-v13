@@ -4,10 +4,11 @@ import Navbar from '@/components/Navbar'
 import PageWrapper from '@/components/PageWrapper'
 import { useToast } from '@/components/Toast'
 import { useCountUp } from '@/hooks/useCountUp'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import {
   loadData, saveData, genId, formatFCFA, formatDate,
   AppData, Journee, Session, getTauxForEmploye, getMontantJournee,
-  getSessionActive, getJourneesSession
+  getSessionActive, getJourneesSession, getStatutEmployeJournee
 } from '@/lib/store'
 
 export default function SessionPage() {
@@ -345,6 +346,108 @@ export default function SessionPage() {
           <span style={{ color: 'var(--red-bright)', fontSize: 13, fontWeight: 600 }}>♀ Femme — {formatFCFA(data.config.tauxFemme)}</span>
         </div>
 
+        {/* Stats détaillées — session sélectionnée */}
+        {sessionVue && sessionAffichee && (() => {
+          const jSession = getJourneesSession(sessionAffichee.id, data.journees)
+          const totalPossible = data.employes.reduce((acc, e) => {
+            const actifs = jSession.filter(j => getStatutEmployeJournee(e, j) !== 'na').length
+            return acc + actifs
+          }, 0)
+          const totalPresences = data.employes.reduce((acc, e) => {
+            const p = jSession.filter(j => getStatutEmployeJournee(e, j) === 'present').length
+            return acc + p
+          }, 0)
+          const tauxGlobal = totalPossible > 0 ? Math.round((totalPresences / totalPossible) * 100) : 0
+          const donutData = [
+            { name: 'Présents', value: totalPresences },
+            { name: 'Absents', value: totalPossible - totalPresences },
+          ]
+
+          const statsEmployes = data.employes.map(e => {
+            const joursActifs = jSession.filter(j => getStatutEmployeJournee(e, j) !== 'na').length
+            const joursPresents = jSession.filter(j => getStatutEmployeJournee(e, j) === 'present').length
+            const taux = joursActifs > 0 ? Math.round((joursPresents / joursActifs) * 100) : 0
+            return { e, joursPresents, joursActifs, taux }
+          }).sort((a, b) => b.taux - a.taux)
+
+          // Badge équipe stable
+          const idxSession = data.sessions.findIndex(s => s.id === sessionAffichee.id)
+          const sessionSuivante = data.sessions[idxSession + 1]
+          let badge = null
+          if (sessionSuivante) {
+            const jSuiv = getJourneesSession(sessionSuivante.id, data.journees)
+            const empSession = new Set(data.employes.filter(e => jSession.some(j => getStatutEmployeJournee(e, j) === 'present')).map(e => e.id))
+            const empSuiv = new Set(data.employes.filter(e => jSuiv.some(j => getStatutEmployeJournee(e, j) === 'present')).map(e => e.id))
+            const communs = [...empSession].filter(id => empSuiv.has(id)).length
+            const ratio = empSession.size > 0 ? communs / empSession.size : 0
+            badge = ratio >= 0.8
+              ? { label: 'Équipe stable 🟢', color: 'var(--green)', bg: 'rgba(61,176,106,0.12)', border: 'rgba(61,176,106,0.3)' }
+              : { label: 'Équipe renouvelée 🔄', color: 'var(--gold)', bg: 'rgba(224,168,58,0.1)', border: 'rgba(224,168,58,0.3)' }
+          }
+
+          return (
+            <div className="fade-in" style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gray-dim)', fontWeight: 600, marginBottom: 12 }}>
+                Analyse — Session {sessionAffichee.numero}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 14, marginBottom: 14 }}>
+                {/* Donut */}
+                <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Présence globale</div>
+                  <PieChart width={120} height={120}>
+                    <Pie data={donutData} cx={55} cy={55} innerRadius={38} outerRadius={56} dataKey="value" strokeWidth={0}>
+                      <Cell fill="#3db06a" />
+                      <Cell fill="#E8312A" fillOpacity={0.7} />
+                    </Pie>
+                    <Tooltip contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, fontSize: 11 }} />
+                  </PieChart>
+                  <div style={{ fontSize: 22, fontFamily: 'Playfair Display, serif', color: 'var(--green)', fontWeight: 700, marginTop: 4 }}>{tauxGlobal}%</div>
+                  <div style={{ fontSize: 10, color: 'var(--gray-dim)', marginTop: 2 }}>{totalPresences} / {totalPossible} j.</div>
+                  {badge && (
+                    <div style={{ marginTop: 10, padding: '4px 10px', borderRadius: 20, background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color, fontSize: 11, fontWeight: 600, textAlign: 'center' }}>
+                      {badge.label}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tableau employés */}
+                <div className="card" style={{ padding: '14px 16px', overflowX: 'auto' }}>
+                  <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Présence par employé</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ color: 'var(--gray-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Employé</th>
+                        <th style={{ textAlign: 'center', padding: '4px 8px', fontWeight: 600 }}>Jours</th>
+                        <th style={{ textAlign: 'right', padding: '4px 8px', fontWeight: 600 }}>Taux</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statsEmployes.map(({ e, joursPresents, joursActifs, taux }) => (
+                        <tr key={e.id} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '6px 8px', color: 'var(--cream)' }}>
+                            {e.prenom} {e.nom}
+                            <span style={{ fontSize: 10, color: 'var(--gray-dim)', marginLeft: 6 }}>{e.genre === 'H' ? '♂' : '♀'}</span>
+                          </td>
+                          <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--gray)' }}>
+                            {joursPresents} / {joursActifs}
+                          </td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                            <span style={{
+                              fontWeight: 700, fontSize: 13,
+                              color: taux >= 80 ? 'var(--green)' : taux >= 50 ? 'var(--gold)' : 'var(--red-bright)'
+                            }}>{taux}%</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Journées */}
         <div>
           <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 14, color: 'var(--white)' }}>
@@ -358,11 +461,7 @@ export default function SessionPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {[...journeesSession].reverse().map((j, i) => {
-                const presents = data.employes.filter(e => {
-                  if (j.date < e.dateAjout) return false
-                  if (e.dateSortie && j.date > e.dateSortie) return false
-                  return !j.absents.includes(e.id)
-                }).length
+                const presents = data.employes.filter(e => getStatutEmployeJournee(e, j) === 'present').length
                 const montant = data.employes.reduce((acc, e) => acc + getMontantJournee(e, j, data.config), 0)
                 return (
                   <div key={j.id} className="card stagger-item" style={{ padding: '14px 18px', animationDelay: `${i * 0.04}s` }}>

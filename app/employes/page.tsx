@@ -420,7 +420,7 @@ export default function EmployesPage() {
                 const montant = getMontantTotal(e, data.journees, data.config)
                 const isActive = selected?.id === e.id
                 return (
-                  <div key={e.id} onClick={() => setSelected(isActive ? null : e)}
+                  <div key={e.id} onClick={() => { setSelected(isActive ? null : e); if (!isActive) window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                     className="card card-clickable stagger-item"
                     style={{
                       padding: '14px 16px', cursor: 'pointer',

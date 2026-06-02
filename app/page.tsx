@@ -174,17 +174,18 @@ export default function SessionPage() {
       return
     }
     const idS = deleteModal.id
+    // Calculer le prochain numéro AVANT la suppression
+    const maxNumeroAvant = data.sessions.reduce((m, s) => Math.max(m, s.numero), 0)
     // Supprimer la session + ses journées
     let updated = {
       ...data,
       sessions: data.sessions.filter(s => s.id !== idS),
       journees: data.journees.filter(j => j.sessionId !== idS),
     }
-    // Si plus de session active, créer une nouvelle
+    // Si plus de session active, créer une nouvelle avec un numéro supérieur
     const encoreActive = updated.sessions.find(s => !s.fermee)
     if (!encoreActive) {
-      const nouvNum = (updated.sessions.reduce((m, s) => Math.max(m, s.numero), 0)) + 1
-      const nouvS: Session = { id: genId(), numero: nouvNum, dateDebut: new Date().toISOString().slice(0,10), fermee: false }
+      const nouvS: Session = { id: genId(), numero: maxNumeroAvant + 1, dateDebut: new Date().toISOString().slice(0,10), fermee: false }
       updated = { ...updated, sessions: [...updated.sessions, nouvS] }
     }
     syncBlocked.current = true

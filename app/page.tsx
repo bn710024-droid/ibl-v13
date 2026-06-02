@@ -426,6 +426,7 @@ export default function SessionPage() {
                     <thead>
                       <tr style={{ color: 'var(--gray-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Employé</th>
+                        <th style={{ textAlign: 'center', padding: '4px 8px', fontWeight: 600 }}>Genre</th>
                         <th style={{ textAlign: 'right', padding: '4px 8px', fontWeight: 600 }}>Taux de présence</th>
                       </tr>
                     </thead>
@@ -434,6 +435,9 @@ export default function SessionPage() {
                         <tr key={e.id} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                           <td style={{ padding: '6px 8px', color: 'var(--cream)' }}>
                             {e.prenom} {e.nom}
+                          </td>
+                          <td style={{ padding: '6px 8px', textAlign: 'center', color: e.genre === 'H' ? '#3db06a' : '#52d485', fontSize: 12, fontWeight: 600 }}>
+                            {e.genre === 'H' ? 'Homme' : 'Femme'}
                           </td>
                           <td style={{ padding: '6px 8px', textAlign: 'right' }}>
                             <span style={{

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Navbar from '@/components/Navbar'
 import PageWrapper from '@/components/PageWrapper'
 import { useToast } from '@/components/Toast'
@@ -35,6 +35,8 @@ export default function SessionPage() {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const toast = useToast()
 
+  const syncBlocked = useRef(false)
+
   useEffect(() => {
     const d = loadData()
     if (d.sessions.length === 0) {
@@ -45,9 +47,10 @@ export default function SessionPage() {
     setData(d)
     setTauxH(d.config.tauxHomme.toString())
     setTauxF(d.config.tauxFemme.toString())
-    // Sync depuis Supabase
+    // Sync depuis Supabase — bloquée si l'utilisateur a déjà modifié des données
     import('@/lib/syncFromSupabase').then(({ syncFromSupabase }) => {
       syncFromSupabase(remote => {
+        if (syncBlocked.current) return
         setData(remote)
         setTauxH(remote.config.tauxHomme.toString())
         setTauxF(remote.config.tauxFemme.toString())
@@ -184,6 +187,7 @@ export default function SessionPage() {
       const nouvS: Session = { id: genId(), numero: nouvNum, dateDebut: new Date().toISOString().slice(0,10), fermee: false }
       updated = { ...updated, sessions: [...updated.sessions, nouvS] }
     }
+    syncBlocked.current = true
     setData(updated); saveData(updated)
     setDeleteModal(null); setDeletePin(''); setDeletePinErr('')
     setSessionVue(null)

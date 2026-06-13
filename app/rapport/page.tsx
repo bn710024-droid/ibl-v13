@@ -300,41 +300,114 @@ export default function RapportPage() {
           <div style={{ ...styles.kpiBox, background: '#fff8f8' }}><div style={{ ...styles.kpiVal, color: '#c0392b' }}>{formatFCFA(totalPaie)}</div><div style={styles.kpiLab}>Total paie</div></div>
         </div>
 
-        {employes.length > 0 && journeesRH.length > 0 ? (
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Employé</th>
-                <th style={styles.th}>Genre</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Taux/jour</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Jours présents</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Montant dû</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employes.map(e => {
-                const jours = totalJoursPresents(e.id)
-                const montant = getTotalEmploye(e.id)
-                const taux = getTauxForEmploye(e, data.config)
-                return (
-                  <tr key={e.id}>
-                    <td style={styles.td}>{e.prenom} {e.nom}</td>
-                    <td style={styles.td}>{e.genre === 'H' ? 'Homme' : 'Femme'}</td>
-                    <td style={styles.tdRight}>{formatFCFA(taux)}</td>
-                    <td style={{ ...styles.tdRight, fontWeight: 600 }}>{jours}</td>
-                    <td style={{ ...styles.tdRight, ...styles.greenBadge }}>{formatFCFA(montant)}</td>
-                  </tr>
-                )
-              })}
-              <tr style={styles.totalRow}>
-                <td style={styles.td} colSpan={3}><strong>TOTAL</strong></td>
-                <td style={styles.tdRight}><strong>{journeesRH.reduce((acc, j) => acc + employes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)}</strong></td>
-                <td style={{ ...styles.tdRight, color: '#c0392b' }}><strong>{formatFCFA(totalPaie)}</strong></td>
-              </tr>
-            </tbody>
-          </table>
+        {employes.length > 0 ? (
+          <>
+            {/* Tableau présences détaillées par jour */}
+            {journeesRH.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#1a5c2e', marginBottom: 8, marginTop: 4 }}>
+                  Feuille de présence détaillée
+                </div>
+                <div style={{ overflowX: 'auto', marginBottom: 20 }}>
+                  <table style={{ ...styles.table, fontSize: 10 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...styles.th, fontSize: 10, minWidth: 120 }}>Employé</th>
+                        <th style={{ ...styles.th, fontSize: 10 }}>Genre</th>
+                        {journeesRH.map(j => (
+                          <th key={j.id} style={{ ...styles.th, textAlign: 'center', fontSize: 9, padding: '6px 4px', minWidth: 32 }}>
+                            {new Date(j.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                          </th>
+                        ))}
+                        <th style={{ ...styles.th, textAlign: 'right', fontSize: 10 }}>Jours</th>
+                        <th style={{ ...styles.th, textAlign: 'right', fontSize: 10 }}>Montant</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employes.map((e, idx) => {
+                        const jours = totalJoursPresents(e.id)
+                        const montant = getTotalEmploye(e.id)
+                        return (
+                          <tr key={e.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                            <td style={{ ...styles.td, fontSize: 11, fontWeight: 600 }}>{e.prenom} {e.nom}</td>
+                            <td style={{ ...styles.td, fontSize: 10 }}>{e.genre === 'H' ? 'H' : 'F'}</td>
+                            {journeesRH.map(j => {
+                              const statut = getStatutEmployeJournee(e, j)
+                              return (
+                                <td key={j.id} style={{ ...styles.td, textAlign: 'center', padding: '6px 2px', fontSize: 11 }}>
+                                  {statut === 'present' ? <span style={{ color: '#1a5c2e', fontWeight: 700 }}>P</span>
+                                    : statut === 'absent' ? <span style={{ color: '#c0392b', fontWeight: 700 }}>A</span>
+                                    : <span style={{ color: '#ccc' }}>—</span>}
+                                </td>
+                              )
+                            })}
+                            <td style={{ ...styles.tdRight, fontWeight: 700, fontSize: 11 }}>{jours}</td>
+                            <td style={{ ...styles.tdRight, color: '#1a5c2e', fontWeight: 700, fontSize: 11 }}>{formatFCFA(montant)}</td>
+                          </tr>
+                        )
+                      })}
+                      <tr style={styles.totalRow}>
+                        <td style={styles.td} colSpan={2}><strong>TOTAL</strong></td>
+                        {journeesRH.map(j => (
+                          <td key={j.id} style={{ ...styles.td, textAlign: 'center', fontSize: 10, color: '#1a5c2e', fontWeight: 700 }}>
+                            {employes.filter(e => getStatutEmployeJournee(e, j) === 'present').length}
+                          </td>
+                        ))}
+                        <td style={{ ...styles.tdRight, color: '#1a1a1a' }}><strong>{journeesRH.reduce((acc, j) => acc + employes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)}</strong></td>
+                        <td style={{ ...styles.tdRight, color: '#c0392b' }}><strong>{formatFCFA(totalPaie)}</strong></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {/* Tableau de paiement avec signature */}
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#1a5c2e', marginBottom: 8 }}>
+              Fiche de paiement — Signature des employés
+            </div>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={{ ...styles.th, width: '4%' }}>N°</th>
+                  <th style={styles.th}>Nom & Prénom</th>
+                  <th style={styles.th}>Genre</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>Taux/jour</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>Jours</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>Montant dû</th>
+                  <th style={{ ...styles.th, textAlign: 'center', minWidth: 100 }}>Signature</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employes.map((e, idx) => {
+                  const jours = totalJoursPresents(e.id)
+                  const montant = getTotalEmploye(e.id)
+                  const taux = getTauxForEmploye(e, data.config)
+                  return (
+                    <tr key={e.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                      <td style={{ ...styles.td, color: '#888', fontSize: 11 }}>{idx + 1}</td>
+                      <td style={{ ...styles.td, fontWeight: 600 }}>{e.prenom} {e.nom}</td>
+                      <td style={styles.td}>{e.genre === 'H' ? 'Homme' : 'Femme'}</td>
+                      <td style={styles.tdRight}>{formatFCFA(taux)}</td>
+                      <td style={{ ...styles.tdRight, fontWeight: 700 }}>{jours}</td>
+                      <td style={{ ...styles.tdRight, color: '#1a5c2e', fontWeight: 700 }}>{formatFCFA(montant)}</td>
+                      <td style={{ ...styles.td, textAlign: 'center', borderBottom: '1px solid #ccc' }}>
+                        <div style={{ borderBottom: '1px solid #999', height: 28, width: '80%', margin: '0 auto' }} />
+                      </td>
+                    </tr>
+                  )
+                })}
+                <tr style={styles.totalRow}>
+                  <td style={styles.td} colSpan={4}><strong>TOTAL GÉNÉRAL</strong></td>
+                  <td style={styles.tdRight}><strong>{journeesRH.reduce((acc, j) => acc + employes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)}</strong></td>
+                  <td style={{ ...styles.tdRight, color: '#c0392b' }}><strong>{formatFCFA(totalPaie)}</strong></td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+          </>
         ) : (
-          <p style={{ fontSize: 13, color: '#888', fontStyle: 'italic' }}>Aucune donnée de paie pour cette période.</p>
+          <p style={{ fontSize: 13, color: '#888', fontStyle: 'italic' }}>Aucun employé enregistré.</p>
         )}
 
         {/* ═══ RÉCAP FINAL ═══ */}

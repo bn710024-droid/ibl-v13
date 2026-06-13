@@ -4,7 +4,8 @@ import Navbar from '@/components/Navbar'
 import PageWrapper from '@/components/PageWrapper'
 import {
   loadData, formatFCFA, formatDate,
-  AppData, getStatutEmployeJournee
+  AppData, getStatutEmployeJournee, getStatsProduction, getMontantDepense,
+  getMontantJournee, getTauxForEmploye
 } from '@/lib/store'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -74,6 +75,29 @@ export default function StatsPage() {
     { name: 'Présents', value: totalPresences },
     { name: 'Absents', value: totalPossible - totalPresences },
   ]
+
+  // ── Production ──
+  const statsProd = getStatsProduction(data.journeesProduction)
+  const prodParCamion = data.camions.map(c => {
+    const jours = data.journeesProduction.filter(j => j.camionId === c.id)
+    const s = getStatsProduction(jours)
+    return { name: `C${c.numero}`, recu: s.totalRecu, exportable: s.totalExportable, ecart: s.totalEcart }
+  })
+
+  // ── Finances ──
+  const totalDepenses = data.depenses.reduce((a, d) => a + getMontantDepense(d), 0)
+  const totalPaie = data.employes.reduce((acc, e) =>
+    acc + data.journees.reduce((a, j) => a + getMontantJournee(e, j, data.config), 0), 0)
+  const coutTotal = totalDepenses + totalPaie
+  const coutParKgExp = statsProd.totalExportable > 0 ? Math.round(coutTotal / statsProd.totalExportable) : 0
+
+  // Paie par session
+  const paieParSession = data.sessions.map(s => {
+    const jours = data.journees.filter(j => j.sessionId === s.id)
+    const montant = data.employes.reduce((acc, e) =>
+      acc + jours.reduce((a, j) => a + getMontantJournee(e, j, data.config), 0), 0)
+    return { name: `S${s.numero}`, Paie: montant }
+  })
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--forest-deep)' }}>
@@ -235,6 +259,77 @@ export default function StatsPage() {
                 <span style={{ color: '#3db06a' }}>■ Hommes</span>
                 <span style={{ color: '#52d485' }}>■ Femmes</span>
               </div>
+            </div>
+          )}
+
+          {/* ═══ SECTION PRODUCTION ═══ */}
+          {data.camions.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 10, marginTop: 10 }}>
+                Production — {data.camions.length} camion(s)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
+                {[
+                  { label: 'Total reçu', value: `${statsProd.totalRecu.toLocaleString()} kg`, color: 'var(--white)' },
+                  { label: 'Total exportable', value: `${statsProd.totalExportable.toLocaleString()} kg`, color: 'var(--green)' },
+                  { label: 'Total écarts', value: `${statsProd.totalEcart.toLocaleString()} kg`, color: 'var(--red-bright)' },
+                  { label: '% Écart moyen', value: `${statsProd.pctEcart}%`, color: statsProd.pctEcart > 20 ? 'var(--red-bright)' : 'var(--gold)' },
+                ].map((k, i) => (
+                  <div key={i} className="card" style={{ padding: '18px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontFamily: 'Playfair Display, serif', color: k.color, fontWeight: 700 }}>{k.value}</div>
+                    <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 5 }}>{k.label}</div>
+                  </div>
+                ))}
+              </div>
+              {prodParCamion.length > 1 && (
+                <div className="card" style={{ padding: '18px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Production par camion (kg)</div>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <BarChart data={prodParCamion} barGap={4}>
+                      <XAxis dataKey="name" tick={{ fill: 'rgba(240,237,232,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis hide />
+                      <Tooltip contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, color: 'var(--cream)', fontSize: 11 }} formatter={(v: unknown) => [`${Number(v).toLocaleString()} kg`]} />
+                      <Bar dataKey="exportable" name="Exportable" fill="#3db06a" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="ecart" name="Écart" fill="#E8312A" radius={[4, 4, 0, 0]} fillOpacity={0.7} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11 }}>
+                    <span style={{ color: '#3db06a' }}>■ Exportable</span>
+                    <span style={{ color: '#E8312A' }}>■ Écart</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ═══ SECTION FINANCES ═══ */}
+          <div style={{ fontSize: 11, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 10, marginTop: 4 }}>
+            Finances
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 14 }}>
+            {[
+              { label: 'Total dépenses', value: formatFCFA(totalDepenses), color: 'var(--red-bright)' },
+              { label: 'Total paie', value: formatFCFA(totalPaie), color: 'var(--red-bright)' },
+              { label: 'Coût total', value: formatFCFA(coutTotal), color: 'var(--gold)' },
+              { label: 'Coût / kg exporté', value: coutParKgExp > 0 ? `${coutParKgExp.toLocaleString()} FCFA` : '—', color: 'var(--white)' },
+            ].map((k, i) => (
+              <div key={i} className="card" style={{ padding: '18px', textAlign: 'center' }}>
+                <div style={{ fontSize: i < 3 ? 16 : 18, fontFamily: 'Playfair Display, serif', color: k.color, fontWeight: 700 }}>{k.value}</div>
+                <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 5 }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+          {paieParSession.length > 1 && (
+            <div className="card" style={{ padding: '18px', marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Paie par session (FCFA)</div>
+              <ResponsiveContainer width="100%" height={120}>
+                <BarChart data={paieParSession}>
+                  <XAxis dataKey="name" tick={{ fill: 'rgba(240,237,232,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{ background: 'var(--forest)', border: '1px solid rgba(61,176,106,0.2)', borderRadius: 8, color: 'var(--cream)', fontSize: 11 }} formatter={(v: unknown) => [formatFCFA(Number(v)), 'Paie']} />
+                  <Bar dataKey="Paie" fill="#e0a83a" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
 

@@ -29,6 +29,10 @@ export default function SessionPage() {
   const [deleteModal, setDeleteModal] = useState<Session | null>(null)
   const [deletePin, setDeletePin] = useState('')
   const [deletePinErr, setDeletePinErr] = useState('')
+  // Fermer session
+  const [fermerModal, setFermerModal] = useState(false)
+  const [fermerPin, setFermerPin] = useState('')
+  const [fermerPinErr, setFermerPinErr] = useState('')
   // Réinitialiser tout
   const [resetPin, setResetPin] = useState('')
   const [resetPinErr, setResetPinErr] = useState('')
@@ -97,11 +101,9 @@ export default function SessionPage() {
   }, 0)
   const totalJourneesGlobal = new Set(data.journees.map(j => j.date)).size
 
-  const peutFermer = sessionActive && getJourneesSession(sessionActive.id, data.journees).length >= 15
-  const proche15 = sessionActive && getJourneesSession(sessionActive.id, data.journees).length >= 13
-
-  const fermerSession = () => {
+  const confirmerFermerSession = () => {
     if (!sessionActive) return
+    if (fermerPin !== data.config.pin) { setFermerPinErr('Code PIN incorrect'); return }
     const nouvSession: Session = {
       id: genId(), numero: sessionActive.numero + 1,
       dateDebut: new Date().toISOString().slice(0,10), fermee: false
@@ -112,8 +114,10 @@ export default function SessionPage() {
         ? { ...s, fermee: true, dateFin: new Date().toISOString().slice(0,10) }
         : s).concat(nouvSession)
     }
+    syncBlocked.current = true
     setData(updated); saveData(updated); setSessionVue(null)
-    toast(`Session ${sessionActive.numero} fermée — Session ${nouvSession.numero} démarrée`, 'success')
+    setFermerModal(false); setFermerPin(''); setFermerPinErr('')
+    toast(`Session ${sessionActive.numero} fermee — Session ${nouvSession.numero} demarree`, 'success')
   }
 
   const addJournee = () => {
@@ -230,10 +234,20 @@ export default function SessionPage() {
               color: 'var(--cream)', fontSize: 12, fontFamily: 'DM Sans, sans-serif'
             }}>⚙ Paramètres</button>
             {!sessionVue && sessionActive && (
-              <button className="btn-primary ripple" onClick={() => setShowJourneeModal(true)}
-                style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>
-                + Journée
-              </button>
+              <>
+                <button onClick={() => { setFermerModal(true); setFermerPin(''); setFermerPinErr('') }} style={{
+                  padding: '9px 14px', borderRadius: 8, cursor: 'pointer',
+                  background: 'rgba(61,176,106,0.1)', border: '1px solid rgba(61,176,106,0.3)',
+                  color: 'var(--green)', fontSize: 12, fontFamily: 'DM Sans, sans-serif', fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  <span style={{ fontSize: 14 }}>✓</span> Fermer la session
+                </button>
+                <button className="btn-primary ripple" onClick={() => setShowJourneeModal(true)}
+                  style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>
+                  + Journée
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -243,32 +257,10 @@ export default function SessionPage() {
           <span style={{ fontSize: 18, flexShrink: 0 }}>ℹ️</span>
           <div style={{ fontSize: 12, color: 'rgba(245,240,232,0.6)', lineHeight: 1.7 }}>
             <strong style={{ color: 'var(--green)', display: 'block', marginBottom: 2 }}>Comment fonctionne cette page ?</strong>
-            Une <strong style={{ color: 'var(--cream)' }}>session RH</strong> regroupe jusqu'à <strong style={{ color: 'var(--cream)' }}>15 journées de travail</strong>. Chaque journée enregistre les absences des employés — par défaut, tous sont présents. À 15 jours, fermez la session pour en ouvrir une nouvelle. Les <strong style={{ color: 'var(--cream)' }}>KPIs</strong> ci-dessous résument la session en cours : nombre d'employés, journées travaillées et montant total à payer.
+            Une <strong style={{ color: 'var(--cream)' }}>session RH</strong> regroupe les journées de travail d&apos;un contenaire. Chaque journée enregistre les absences des employés — par défaut, tous sont présents. Quand le contenaire est <strong style={{ color: 'var(--cream)' }}>bouclé</strong>, cliquez sur <strong style={{ color: 'var(--green)' }}>Fermer la session</strong> pour passer à la suivante. Les <strong style={{ color: 'var(--cream)' }}>KPIs</strong> ci-dessous résument la session en cours : nombre d&apos;employés, journées travaillées et montant total à payer.
           </div>
         </div>
 
-        {/* Alerte 15 jours */}
-        {proche15 && sessionActive && !sessionVue && (
-          <div style={{
-            background: peutFermer ? 'rgba(232,49,42,0.12)' : 'rgba(232,49,42,0.07)',
-            border: `1px solid var(--red-border)`,
-            borderLeft: `4px solid var(--red)`,
-            borderRadius: 10, padding: '14px 18px', marginBottom: 20,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-          }}>
-            <div>
-              <span style={{ fontWeight: 600, color: 'var(--red-bright)', fontSize: 14 }}>
-                {peutFermer ? '🔴 Session complète — 15 jours atteints' : `⚠️ ${nbJournees}/15 jours — session bientôt complète`}
-              </span>
-              {peutFermer && <p style={{ fontSize: 12, color: 'var(--gray)', marginTop: 3 }}>Fermez cette session pour en commencer une nouvelle.</p>}
-            </div>
-            {peutFermer && (
-              <button onClick={fermerSession} className="btn-primary" style={{ padding: '9px 18px', borderRadius: 8, fontSize: 13, whiteSpace: 'nowrap' }}>
-                Fermer & Nouvelle session
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Navigation sessions */}
         {data.sessions.length > 0 && (
@@ -320,7 +312,7 @@ export default function SessionPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 14 }}>
           {[
             { label: 'Employés actifs', value: countEmployes.toString(), color: 'var(--green)', stripe: 'stripe-green' },
-            { label: 'Journées session', value: `${countJournees} / 15`, color: 'var(--white)', stripe: 'stripe-white' },
+            { label: 'Journées session', value: `${countJournees}`, color: 'var(--white)', stripe: 'stripe-white' },
             { label: 'Montant session', value: formatFCFA(countMontant), color: 'var(--red-bright)', stripe: 'stripe-red', small: true },
           ].map((kpi, i) => (
             <div key={i} className={`card ${kpi.stripe} fade-in`} style={{ padding: '22px 20px', animationDelay: `${i * 0.07}s` }}>
@@ -621,26 +613,16 @@ export default function SessionPage() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, backdropFilter: "blur(4px)" }}>
           <div className="card" style={{ padding: 30, width: 380 }}>
             <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, marginBottom: 22, color: 'var(--white)' }}>Nouvelle journée</h3>
-            {peutFermer ? (
-              <div style={{ marginBottom: 18 }}>
-                <p style={{ color: 'var(--red-bright)', fontSize: 14, lineHeight: 1.6 }}>
-                  ⚠️ La session {sessionActive?.numero} a atteint 15 jours. Fermez-la d&apos;abord avant d&apos;ajouter une nouvelle journée.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 13, color: 'rgba(245,240,232,0.55)', display: 'block', marginBottom: 5 }}>Date</label>
-                  <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: '100%', padding: '10px 14px', fontSize: 15 }} />
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.45)', marginBottom: 18 }}>
-                  Tous les <strong style={{ color: 'var(--green)' }}>{data.employes.length} employé(s)</strong> seront <strong style={{ color: 'var(--green)' }}>présents</strong> par défaut.
-                </p>
-              </>
-            )}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, color: 'rgba(245,240,232,0.55)', display: 'block', marginBottom: 5 }}>Date</label>
+              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: '100%', padding: '10px 14px', fontSize: 15 }} />
+            </div>
+            <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.45)', marginBottom: 18 }}>
+              Tous les <strong style={{ color: 'var(--green)' }}>{data.employes.length} employé(s)</strong> seront <strong style={{ color: 'var(--green)' }}>présents</strong> par défaut.
+            </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setShowJourneeModal(false)} style={{ padding: '9px 16px', borderRadius: 8, cursor: 'pointer', background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--cream)', fontFamily: 'DM Sans, sans-serif' }}>Fermer</button>
-              {!peutFermer && <button className="btn-primary" onClick={addJournee} style={{ padding: '9px 18px', borderRadius: 8 }}>Créer</button>}
+              <button className="btn-primary" onClick={addJournee} style={{ padding: '9px 18px', borderRadius: 8 }}>Créer</button>
             </div>
           </div>
         </div>
@@ -664,6 +646,52 @@ export default function SessionPage() {
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => { setBonusModal(null); setBonusInput('') }} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
               <button className="btn-primary ripple" onClick={saveBonus} style={{ padding: '9px 18px', borderRadius: 8 }}>Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL FERMER SESSION ── */}
+      {fermerModal && sessionActive && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, backdropFilter: 'blur(4px)' }}>
+          <div className="card modal-card" style={{ padding: 28, width: 400 }}>
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--green)' }}>
+              ✓ Fermer la Session {sessionActive.numero}
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--gray)', marginBottom: 4, lineHeight: 1.6 }}>
+              Le contenaire est bouclé. La session {sessionActive.numero} sera <strong style={{ color: 'var(--cream)' }}>fermée définitivement</strong> et une nouvelle session ({sessionActive.numero + 1}) démarrera automatiquement.
+            </p>
+            <div style={{ background: 'var(--forest-mid)', borderRadius: 8, padding: '10px 14px', marginBottom: 18, display: 'flex', gap: 20 }}>
+              <div>
+                <div style={{ fontSize: 16, color: 'var(--white)', fontWeight: 700 }}>{getJourneesSession(sessionActive.id, data.journees).length}</div>
+                <div style={{ fontSize: 10, color: 'var(--gray-dim)' }}>Journées</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 16, color: 'var(--green)', fontWeight: 700 }}>
+                  {(() => {
+                    const j = getJourneesSession(sessionActive.id, data.journees)
+                    return data.employes.reduce((acc, e) => {
+                      const taux = getTauxForEmploye(e, data.config)
+                      return acc + j.filter(jj => !jj.absents.includes(e.id)).length * taux
+                    }, 0).toLocaleString()} FCFA
+                  )()}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--gray-dim)' }}>Montant total</div>
+              </div>
+            </div>
+            <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 6 }}>Entrez votre PIN pour confirmer</label>
+            <input type="password" maxLength={4} value={fermerPin}
+              onChange={e => { setFermerPin(e.target.value.replace(/\D/g,'')); setFermerPinErr('') }}
+              placeholder="••••" style={{ width: '100%', padding: '11px 14px', fontSize: 22, letterSpacing: '0.35em', textAlign: 'center', marginBottom: 10 }} autoFocus />
+            {fermerPinErr && <p style={{ fontSize: 12, color: 'var(--red-bright)', marginBottom: 10, textAlign: 'center' }}>{fermerPinErr}</p>}
+            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+              <button onClick={() => { setFermerModal(false); setFermerPin(''); setFermerPinErr('') }}
+                className="btn-ghost" style={{ flex: 1, padding: '10px', borderRadius: 8 }}>Annuler</button>
+              <button onClick={confirmerFermerSession} style={{
+                flex: 1, padding: '10px', borderRadius: 8, cursor: 'pointer',
+                background: 'var(--green)', border: 'none', color: 'white',
+                fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14
+              }}>Fermer & Nouvelle session</button>
             </div>
           </div>
         </div>

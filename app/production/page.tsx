@@ -282,11 +282,6 @@ export default function ProductionPage() {
           </div>
         </div>
 
-        {/* Bandeau explicatif */}
-        <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '12px 18px', marginBottom: 18, fontSize: 12, color: 'rgba(245,240,232,0.55)', lineHeight: 1.7 }}>
-          <strong style={{ color: 'var(--green)' }}>Comment fonctionne cette page ?</strong><br/>
-          Enregistrez chaque jour le <strong style={{ color: 'var(--cream)' }}>volume de mangues reçu</strong> (en kg) et les <strong style={{ color: 'var(--cream)' }}>écarts</strong> (mangues non exportables). Le système calcule automatiquement le volume exportable. Quand l'objectif du camion est atteint, il se <strong style={{ color: 'var(--cream)' }}>clôture automatiquement</strong> et le surplus est transféré sur un nouveau camion. Chaque journée crée automatiquement une ligne dans les <strong style={{ color: 'var(--cream)' }}>Dépenses</strong> (achat mangues).
-        </div>
 
         {/* Navigation camions */}
         {data.camions.length > 0 && (

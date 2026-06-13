@@ -125,11 +125,6 @@ export default function DepensesPage() {
           )}
         </div>
 
-        {/* Bandeau explicatif */}
-        <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '12px 18px', marginBottom: 18, fontSize: 12, color: 'rgba(245,240,232,0.55)', lineHeight: 1.7 }}>
-          <strong style={{ color: 'var(--green)' }}>Comment fonctionne cette page ?</strong><br/>
-          Les dépenses sont organisées par <strong style={{ color: 'var(--cream)' }}>camion</strong>. Les lignes marquées <strong style={{ color: 'var(--green)' }}>Auto 🥭</strong> sont créées automatiquement depuis la page Production (achats mangues) — seul le <strong style={{ color: 'var(--cream)' }}>prix/kg</strong> est à renseigner. Ajoutez des <strong style={{ color: 'var(--cream)' }}>dépenses manuelles</strong> pour les frais fixes (transport, carburant…) ou les achats en kg avec un prix unitaire.
-        </div>
 
         {/* Navigation camions */}
         {data.camions.length > 1 && (

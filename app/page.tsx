@@ -252,14 +252,6 @@ export default function SessionPage() {
           </div>
         </div>
 
-        {/* Bandeau explicatif */}
-        <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '12px 18px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 18, flexShrink: 0 }}>ℹ️</span>
-          <div style={{ fontSize: 12, color: 'rgba(245,240,232,0.6)', lineHeight: 1.7 }}>
-            <strong style={{ color: 'var(--green)', display: 'block', marginBottom: 2 }}>Comment fonctionne cette page ?</strong>
-            Une <strong style={{ color: 'var(--cream)' }}>session RH</strong> regroupe les journées de travail d&apos;un contenaire. Chaque journée enregistre les absences des employés — par défaut, tous sont présents. Quand le contenaire est <strong style={{ color: 'var(--cream)' }}>bouclé</strong>, cliquez sur <strong style={{ color: 'var(--green)' }}>Fermer la session</strong> pour passer à la suivante. Les <strong style={{ color: 'var(--cream)' }}>KPIs</strong> ci-dessous résument la session en cours : nombre d&apos;employés, journées travaillées et montant total à payer.
-          </div>
-        </div>
 
 
         {/* Navigation sessions */}

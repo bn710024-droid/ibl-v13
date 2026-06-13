@@ -384,7 +384,17 @@ export default function EmployesPage() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, color: 'var(--white)' }}>Employés</h1>
-            <button className="btn-primary ripple" onClick={() => setShowAdd(true)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13 }}>+ Ajouter</button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => {
+                const session = data.sessions.find(s => !s.fermee) || data.sessions[data.sessions.length - 1]
+                window.open(`/rapport-employes${session ? `?session=${session.id}` : ''}`, '_blank')
+              }} style={{
+                padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
+                background: 'var(--forest-mid)', border: '1px solid rgba(61,176,106,0.25)',
+                color: 'var(--green)', fontFamily: 'DM Sans, sans-serif', fontWeight: 600
+              }}>📋 Rapport journalier</button>
+              <button className="btn-primary ripple" onClick={() => setShowAdd(true)} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13 }}>+ Ajouter</button>
+            </div>
           </div>
           <div style={{ background: 'rgba(61,176,106,0.06)', border: '1px solid rgba(61,176,106,0.15)', borderRadius: 10, padding: '11px 16px', marginBottom: 14, fontSize: 12, color: 'rgba(245,240,232,0.55)', lineHeight: 1.7 }}>
             <strong style={{ color: 'var(--green)' }}>Comment utiliser cette page ?</strong><br/>

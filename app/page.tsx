@@ -670,11 +670,12 @@ export default function SessionPage() {
                 <div style={{ fontSize: 16, color: 'var(--green)', fontWeight: 700 }}>
                   {(() => {
                     const j = getJourneesSession(sessionActive.id, data.journees)
-                    return data.employes.reduce((acc, e) => {
+                    const total = data.employes.reduce((acc, e) => {
                       const taux = getTauxForEmploye(e, data.config)
                       return acc + j.filter(jj => !jj.absents.includes(e.id)).length * taux
-                    }, 0).toLocaleString()} FCFA
-                  )()}
+                    }, 0)
+                    return `${total.toLocaleString()} FCFA`
+                  })()}
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--gray-dim)' }}>Montant total</div>
               </div>

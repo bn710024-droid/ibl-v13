@@ -337,9 +337,6 @@ export default function StatsPage() {
             <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
               Classement présence — tous employés
             </div>
-            <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.4)', marginBottom: 14 }}>
-              Classés du meilleur au plus faible taux. <span style={{ color: 'var(--green)' }}>Vert ≥ 80%</span> · <span style={{ color: 'var(--gold)' }}>Or ≥ 50%</span> · <span style={{ color: 'var(--red-bright)' }}>Rouge &lt; 50%</span>. Le taux est calculé uniquement sur les jours où l'employé était censé être présent (à partir de sa date d'embauche).
-            </p>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ color: 'var(--gray-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>

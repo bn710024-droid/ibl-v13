@@ -345,9 +345,25 @@ export default function EmployesPage() {
                       )}
                     </div>
                     {statut === 'na' ? (
-                      <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.05)', color: 'var(--gray-dim)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                        N/A
-                      </span>
+                      sessionFermee ? (
+                        <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.05)', color: 'var(--gray-dim)', border: '1px solid rgba(255,255,255,0.08)' }}>N/A</span>
+                      ) : (
+                        <button onClick={() => {
+                          // Rétrodate l'embauche et marque présent
+                          const updated = {
+                            ...data,
+                            employes: data.employes.map(emp => emp.id === e.id ? { ...emp, dateEmbauche: j.date, dateAjout: j.date } : emp),
+                            journees: data.journees.map(jj => jj.id === j.id
+                              ? { ...jj, absents: jj.absents.filter(a => a !== e.id) }
+                              : jj
+                            )
+                          }
+                          setData(updated); saveData(updated)
+                          setSelected(updated.employes.find(emp => emp.id === e.id) || null)
+                        }} style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', background: 'rgba(255,255,255,0.05)', color: 'var(--gray-dim)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          ＋ Ajouter
+                        </button>
+                      )
                     ) : sessionFermee ? (
                       <span className={statut === 'absent' ? 'tag-absent' : 'tag-present'} style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                         {statut === 'absent' ? '✕ Absent' : '✓ Présent'}

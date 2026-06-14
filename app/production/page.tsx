@@ -29,6 +29,9 @@ export default function ProductionPage() {
   // Config objectif camion auto-créé (après surplus)
   const [configCamionModal, setConfigCamionModal] = useState<string | null>(null)
   const [configCamionObjectif, setConfigCamionObjectif] = useState('')
+  // Modifier objectif camion existant
+  const [editObjectifModal, setEditObjectifModal] = useState(false)
+  const [editObjectifVal, setEditObjectifVal] = useState('')
   const toast = useToast()
 
   useEffect(() => {
@@ -342,10 +345,17 @@ export default function ProductionPage() {
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
                   🚛 Camion {camionAffiche.numero} — <span style={{ color: statutColor(camionAffiche.statut) }}>{statutLabel(camionAffiche.statut)}</span>
                 </span>
-                <span style={{ fontSize: 13, color: 'var(--gray)' }}>
-                  <span style={{ color: 'var(--green)', fontWeight: 700 }}>{stats.totalExportable.toLocaleString()}</span> / {camionAffiche.objectifKg.toLocaleString()} kg
-                  {kgRestants > 0 && <span style={{ color: 'var(--gray-dim)', marginLeft: 8 }}>· {kgRestants.toLocaleString()} kg restants</span>}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 13, color: 'var(--gray)' }}>
+                    <span style={{ color: 'var(--green)', fontWeight: 700 }}>{stats.totalExportable.toLocaleString()}</span> / {camionAffiche.objectifKg.toLocaleString()} kg
+                    {kgRestants > 0 && <span style={{ color: 'var(--gray-dim)', marginLeft: 8 }}>· {kgRestants.toLocaleString()} kg restants</span>}
+                  </span>
+                  <button onClick={() => { setEditObjectifVal(camionAffiche.objectifKg.toString()); setEditObjectifModal(true) }}
+                    title="Modifier l'objectif"
+                    style={{ background: 'var(--forest-mid)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--gray)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 12 }}>
+                    ✏
+                  </button>
+                </div>
               </div>
               <div style={{ height: 10, borderRadius: 5, background: 'var(--forest-mid)', overflow: 'hidden' }}>
                 <div style={{
@@ -528,6 +538,35 @@ export default function ProductionPage() {
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
               <button onClick={() => { setShowAddJournee(false); setEditJournee(null) }} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
               <button className="btn-primary ripple" onClick={sauvegarderJournee} style={{ padding: '9px 18px', borderRadius: 8 }}>Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL MODIFIER OBJECTIF ── */}
+      {editObjectifModal && camionAffiche && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }}>
+          <div className="card modal-card" style={{ padding: 28, width: 360 }}>
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--white)' }}>
+              ✏ Modifier l'objectif — Camion {camionAffiche.numero}
+            </h3>
+            <p style={{ fontSize: 12, color: 'var(--gray)', marginBottom: 16 }}>
+              Objectif actuel : <strong style={{ color: 'var(--green)' }}>{camionAffiche.objectifKg.toLocaleString()} kg</strong>
+            </p>
+            <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Nouvel objectif (kg exportables)</label>
+            <input type="number" min="1" value={editObjectifVal}
+              onChange={e => setEditObjectifVal(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus />
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
+              <button onClick={() => setEditObjectifModal(false)} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
+              <button className="btn-primary ripple" onClick={() => {
+                const objectif = parseFloat(editObjectifVal)
+                if (!objectif || objectif <= 0) return
+                const updated = { ...data, camions: data.camions.map(c => c.id === camionAffiche.id ? { ...c, objectifKg: objectif } : c) }
+                setData(updated); saveData(updated)
+                setEditObjectifModal(false)
+                toast(`Objectif mis a jour : ${objectif.toLocaleString()} kg`, 'success')
+              }} style={{ padding: '9px 18px', borderRadius: 8 }}>Enregistrer</button>
             </div>
           </div>
         </div>

@@ -150,7 +150,6 @@ export default function StatsPage() {
             {/* Courbe H vs F */}
             <div className="card" style={{ padding: '18px' }}>
               <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Présences par jour — Hommes vs Femmes</div>
-              <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)', marginBottom: 12 }}>Cliquez sur un point pour voir le détail</div>
               {courbeGenerale.length === 0 ? (
                 <div style={{ color: 'var(--gray-dim)', fontSize: 12 }}>Aucune journée</div>
               ) : (

@@ -441,9 +441,6 @@ export default function SessionPage() {
           <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--white)' }}>
             Journées — Session {sessionAffichee?.numero}
           </h2>
-          <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.4)', marginBottom: 14 }}>
-            Chaque ligne représente une journée de travail. Cliquez sur <strong style={{ color: 'var(--gold)' }}>⚡ Bonus</strong> pour ajouter une prime exceptionnelle ce jour-là. Le bouton <strong style={{ color: 'var(--red-bright)' }}>✕</strong> supprime définitivement la journée.
-          </p>
           {journeesSession.length === 0 ? (
             <div className="card" style={{ padding: 36, textAlign: 'center', color: 'rgba(245,240,232,0.3)' }}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>

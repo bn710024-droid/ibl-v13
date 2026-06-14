@@ -89,7 +89,8 @@ export default function StatsPage() {
   const totalPaie = data.employes.reduce((acc, e) =>
     acc + data.journees.reduce((a, j) => a + getMontantJournee(e, j, data.config), 0), 0)
   const coutTotal = totalDepenses + totalPaie
-  const coutParKgExp = statsProd.totalExportable > 0 ? Math.round(coutTotal / statsProd.totalExportable) : 0
+  const depParKgExp = statsProd.totalExportable > 0 ? Math.round(totalDepenses / statsProd.totalExportable) : 0
+  const paieParKgExp = statsProd.totalExportable > 0 ? Math.round(totalPaie / statsProd.totalExportable) : 0
 
   // Paie par session
   const paieParSession = data.sessions.map(s => {
@@ -305,15 +306,25 @@ export default function StatsPage() {
           <div style={{ fontSize: 11, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 10, marginTop: 4 }}>
             Finances
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
             {[
               { label: 'Total dépenses', value: formatFCFA(totalDepenses), color: 'var(--red-bright)' },
               { label: 'Total paie', value: formatFCFA(totalPaie), color: 'var(--red-bright)' },
               { label: 'Coût total', value: formatFCFA(coutTotal), color: 'var(--gold)' },
-              { label: 'Coût / kg exporté', value: coutParKgExp > 0 ? `${coutParKgExp.toLocaleString()} FCFA` : '—', color: 'var(--white)' },
             ].map((k, i) => (
               <div key={i} className="card" style={{ padding: '18px', textAlign: 'center' }}>
-                <div style={{ fontSize: i < 3 ? 16 : 18, fontFamily: 'Playfair Display, serif', color: k.color, fontWeight: 700 }}>{k.value}</div>
+                <div style={{ fontSize: 16, fontFamily: 'Playfair Display, serif', color: k.color, fontWeight: 700 }}>{k.value}</div>
+                <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 5 }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 14 }}>
+            {[
+              { label: 'Dépenses / kg exporté', value: depParKgExp > 0 ? `${depParKgExp.toLocaleString()} FCFA` : '—', color: 'var(--white)' },
+              { label: 'Paie / kg exporté', value: paieParKgExp > 0 ? `${paieParKgExp.toLocaleString()} FCFA` : '—', color: 'var(--white)' },
+            ].map((k, i) => (
+              <div key={i} className="card" style={{ padding: '18px', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontFamily: 'Playfair Display, serif', color: k.color, fontWeight: 700 }}>{k.value}</div>
                 <div style={{ fontSize: 10, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 5 }}>{k.label}</div>
               </div>
             ))}

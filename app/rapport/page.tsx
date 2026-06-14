@@ -67,7 +67,7 @@ export default function RapportPage() {
 
   const journeesProd = camion
     ? getJourneesCamion(camion.id, data).sort((a, b) => a.date.localeCompare(b.date))
-    : (mode === 'global' ? [...data.journeesProduction].sort((a, b) => a.date.localeCompare(b.date)) : [])
+    : [...data.journeesProduction].sort((a, b) => a.date.localeCompare(b.date))
 
   const depenses = camion
     ? getDepensesCamion(camion.id, data)

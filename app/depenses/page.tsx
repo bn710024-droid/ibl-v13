@@ -8,6 +8,60 @@ import {
   AppData, Depense, Camion, getMontantDepense, getCamionActif, getDepensesCamion
 } from '@/lib/store'
 
+function SyncDepenseForm({ editDepense, data, prixKg, setPrixKg, qteKg, setQteKg, formatDate, formatFCFA }: {
+  editDepense: Depense; data: AppData; prixKg: string; setPrixKg: (v: string) => void
+  qteKg: string; setQteKg: (v: string) => void; formatDate: (d: string) => string; formatFCFA: (n: number) => string
+}) {
+  const journeeProd = data.journeesProduction.find(j => j.id === editDepense.productionJourneeId)
+  const volRecu = journeeProd?.volumeRecuKg ?? editDepense.quantiteKg ?? 0
+  const volExportable = journeeProd ? journeeProd.volumeRecuKg - journeeProd.volumeEcartKg : volRecu
+  const qteActive = qteKg ? parseFloat(qteKg) : (editDepense.quantiteKg ?? 0)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 8, background: 'var(--forest-mid)' }}>
+        <div style={{ fontSize: 13, color: 'var(--white)', fontWeight: 600 }}>{editDepense.description}</div>
+        <div style={{ fontSize: 12, color: 'var(--gray-dim)', marginTop: 3 }}>{formatDate(editDepense.date)}</div>
+      </div>
+      <div>
+        <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 8 }}>Volume à facturer</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setQteKg(volRecu.toString())} style={{
+            flex: 1, padding: '10px 8px', borderRadius: 8, cursor: 'pointer',
+            fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+            background: qteActive === volRecu ? 'var(--red)' : 'var(--forest-mid)',
+            color: qteActive === volRecu ? 'white' : 'var(--gray)',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}>
+            Total reçu<br/>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>{volRecu.toLocaleString()} kg</span>
+          </button>
+          <button onClick={() => setQteKg(volExportable.toString())} style={{
+            flex: 1, padding: '10px 8px', borderRadius: 8, cursor: 'pointer',
+            fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+            background: qteActive === volExportable && volRecu !== volExportable ? 'var(--green)' : 'var(--forest-mid)',
+            color: qteActive === volExportable && volRecu !== volExportable ? 'white' : 'var(--gray)',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}>
+            Exportable seul<br/>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>{volExportable.toLocaleString()} kg</span>
+          </button>
+        </div>
+      </div>
+      <div>
+        <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Prix par kg (FCFA)</label>
+        <input type="number" value={prixKg} onChange={e => setPrixKg(e.target.value)} placeholder="ex: 75"
+          style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus />
+      </div>
+      {prixKg && qteActive > 0 && (
+        <div style={{ padding: '10px', borderRadius: 8, background: 'var(--forest-mid)', textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 2 }}>{qteActive.toLocaleString()} kg × {formatFCFA(parseFloat(prixKg))}</div>
+          <span style={{ color: 'var(--red-bright)', fontWeight: 700, fontSize: 16 }}>{formatFCFA(qteActive * parseFloat(prixKg))}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DepensesPage() {
   const [data, setData] = useState<AppData | null>(null)
   const [camionVue, setCamionVue] = useState<string | null>(null)
@@ -263,60 +317,18 @@ export default function DepensesPage() {
               {editDepense?.isProductionSync ? '💲 Renseigner le prix' : editDepense ? 'Modifier la dépense' : 'Nouvelle dépense'}
             </h3>
 
-            {editDepense?.isProductionSync ? (() => {
-              /* Mode spécial sync — prix + choix volume */
-              const journeeProd = data.journeesProduction.find(j => j.id === editDepense.productionJourneeId)
-              const volRecu = journeeProd?.volumeRecuKg ?? editDepense.quantiteKg ?? 0
-              const volExportable = journeeProd ? journeeProd.volumeRecuKg - journeeProd.volumeEcartKg : volRecu
-              const qteActive = qteKg ? parseFloat(qteKg) : (editDepense.quantiteKg ?? 0)
-              return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-                <div style={{ padding: '12px 16px', borderRadius: 8, background: 'var(--forest-mid)' }}>
-                  <div style={{ fontSize: 13, color: 'var(--white)', fontWeight: 600 }}>{editDepense.description}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gray-dim)', marginTop: 3 }}>{formatDate(editDepense.date)}</div>
-                </div>
-
-                {/* Toggle volume */}
-                <div>
-                  <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 8 }}>Volume à facturer</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setQteKg(volRecu.toString())} style={{
-                      flex: 1, padding: '10px 8px', borderRadius: 8, cursor: 'pointer',
-                      fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                      background: qteActive === volRecu ? 'var(--red)' : 'var(--forest-mid)',
-                      color: qteActive === volRecu ? 'white' : 'var(--gray)',
-                      border: '1px solid rgba(255,255,255,0.08)'
-                    }}>
-                      Total reçu<br/>
-                      <span style={{ fontSize: 14, fontWeight: 700 }}>{volRecu.toLocaleString()} kg</span>
-                    </button>
-                    <button onClick={() => setQteKg(volExportable.toString())} style={{
-                      flex: 1, padding: '10px 8px', borderRadius: 8, cursor: 'pointer',
-                      fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                      background: qteActive === volExportable && volRecu !== volExportable ? 'var(--green)' : 'var(--forest-mid)',
-                      color: qteActive === volExportable && volRecu !== volExportable ? 'white' : 'var(--gray)',
-                      border: '1px solid rgba(255,255,255,0.08)'
-                    }}>
-                      Exportable seul<br/>
-                      <span style={{ fontSize: 14, fontWeight: 700 }}>{volExportable.toLocaleString()} kg</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Prix par kg (FCFA)</label>
-                  <input type="number" value={prixKg} onChange={e => setPrixKg(e.target.value)} placeholder="ex: 75" style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus />
-                </div>
-                {prixKg && qteActive > 0 && (
-                  <div style={{ padding: '10px', borderRadius: 8, background: 'var(--forest-mid)', textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 2 }}>{qteActive.toLocaleString()} kg × {formatFCFA(parseFloat(prixKg))}</div>
-                    <span style={{ color: 'var(--red-bright)', fontWeight: 700, fontSize: 16 }}>{formatFCFA(qteActive * parseFloat(prixKg))}</span>
-                  </div>
-                )}
-              </div>
-              )
-            })()!
-            ) : (
+            {editDepense?.isProductionSync
+              ? <SyncDepenseForm
+                  editDepense={editDepense}
+                  data={data}
+                  prixKg={prixKg}
+                  setPrixKg={setPrixKg}
+                  qteKg={qteKg}
+                  setQteKg={setQteKg}
+                  formatDate={formatDate}
+                  formatFCFA={formatFCFA}
+                />
+            : (
               /* Mode normal */
               <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
                 <div style={{ display: 'flex', gap: 8 }}>

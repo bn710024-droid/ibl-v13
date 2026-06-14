@@ -19,6 +19,7 @@ export default function ProductionPage() {
   const [dateJ, setDateJ] = useState(new Date().toISOString().slice(0,10))
   const [volumeRecu, setVolumeRecu] = useState('')
   const [volumeEcart, setVolumeEcart] = useState('')
+  const [produit, setProduit] = useState('')
   // Suppression camion
   const [deleteCamionModal, setDeleteCamionModal] = useState<Camion | null>(null)
   const [deleteCamionPin, setDeleteCamionPin] = useState('')
@@ -90,6 +91,7 @@ export default function ProductionPage() {
     setDateJ(j.date)
     setVolumeRecu(j.volumeRecuKg.toString())
     setVolumeEcart(j.volumeEcartKg.toString())
+    setProduit(j.produit || '')
     setShowAddJournee(true)
   }
 
@@ -125,7 +127,8 @@ export default function ProductionPage() {
         camionId: camionAffiche.id,
         date: dateJ,
         volumeRecuKg: recu1,
-        volumeEcartKg: ecart1
+        volumeEcartKg: ecart1,
+        produit: produit.trim() || undefined
       }
 
       // Clôture camion 1
@@ -152,7 +155,8 @@ export default function ProductionPage() {
           camionId: nouveauCamion.id,
           date: dateJ,
           volumeRecuKg: recu2,
-          volumeEcartKg: ecart2
+          volumeEcartKg: ecart2,
+          produit: produit.trim() || undefined
         }
         updated = {
           ...updated,
@@ -175,7 +179,8 @@ export default function ProductionPage() {
         camionId: camionAffiche.id,
         date: dateJ,
         volumeRecuKg: recu,
-        volumeEcartKg: ecart
+        volumeEcartKg: ecart,
+        produit: produit.trim() || undefined
       }
       updated = {
         ...updated,
@@ -201,7 +206,7 @@ export default function ProductionPage() {
 
     setData(updated); saveData(updated)
     setShowAddJournee(false); setEditJournee(null)
-    setVolumeRecu(''); setVolumeEcart('')
+    setVolumeRecu(''); setVolumeEcart(''); setProduit('')
     setDateJ(new Date().toISOString().slice(0,10))
   }
 
@@ -279,7 +284,7 @@ export default function ProductionPage() {
               }} style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>🚛 Nouveau camion</button>
             )}
             {camionActif && (
-              <button onClick={() => { setEditJournee(null); setVolumeRecu(''); setVolumeEcart(''); setDateJ(new Date().toISOString().slice(0,10)); setShowAddJournee(true) }}
+              <button onClick={() => { setEditJournee(null); setVolumeRecu(''); setVolumeEcart(''); setProduit(''); setDateJ(new Date().toISOString().slice(0,10)); setShowAddJournee(true) }}
                 className="btn-primary ripple" style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>+ Journée</button>
             )}
           </div>
@@ -442,7 +447,10 @@ export default function ProductionPage() {
                     const pct = j.volumeRecuKg > 0 ? Math.round((j.volumeEcartKg / j.volumeRecuKg) * 1000) / 10 : 0
                     return (
                       <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, background: 'var(--forest-mid)' }}>
-                        <span style={{ fontSize: 13, color: 'var(--cream)', fontWeight: 500, minWidth: 100 }}>{formatDate(j.date)}</span>
+                        <div>
+                          <span style={{ fontSize: 13, color: 'var(--cream)', fontWeight: 500 }}>{formatDate(j.date)}</span>
+                          {j.produit && <span style={{ fontSize: 11, color: 'var(--gold)', marginLeft: 8 }}>🥭 {j.produit}</span>}
+                        </div>
                         <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 12, color: 'var(--gray)' }}>Reçu : <span style={{ color: 'var(--white)', fontWeight: 600 }}>{j.volumeRecuKg.toLocaleString()} kg</span></span>
                           <span style={{ fontSize: 12, color: 'var(--gray)' }}>Export : <span style={{ color: 'var(--green)', fontWeight: 600 }}>{exportable.toLocaleString()} kg</span></span>
@@ -489,8 +497,12 @@ export default function ProductionPage() {
                 <input type="date" value={dateJ} onChange={e => setDateJ(e.target.value)} style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} />
               </div>
               <div>
+                <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Produit (variété)</label>
+                <input type="text" value={produit} onChange={e => setProduit(e.target.value)} placeholder="ex: Kent, Keitt, Boukodiékhal..." style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus />
+              </div>
+              <div>
                 <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Volume reçu (kg)</label>
-                <input type="number" min="0" value={volumeRecu} onChange={e => setVolumeRecu(e.target.value)} placeholder="ex: 8500" style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus />
+                <input type="number" min="0" value={volumeRecu} onChange={e => setVolumeRecu(e.target.value)} placeholder="ex: 8500" style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} />
               </div>
               <div>
                 <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Volume écart (kg)</label>

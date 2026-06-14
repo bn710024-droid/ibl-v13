@@ -32,6 +32,7 @@ export interface JourneeProduction {
   date: string
   volumeRecuKg: number
   volumeEcartKg: number
+  produit?: string
 }
 
 export interface Depense {

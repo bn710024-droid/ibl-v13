@@ -147,44 +147,67 @@ export default function RapportEmployesPage() {
                   )}
                 </div>
 
-                {/* Tableau présents */}
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...styles.th, width: '5%' }}>N°</th>
-                      <th style={styles.th}>Nom & Prénom</th>
-                      <th style={{ ...styles.th, textAlign: 'center' }}>Genre</th>
-                      <th style={{ ...styles.th, textAlign: 'right' }}>Taux/jour</th>
-                      <th style={{ ...styles.th, textAlign: 'right' }}>Montant</th>
-                      <th style={{ ...styles.th, textAlign: 'center', width: '120px' }}>Statut</th>
-                    </tr>
-                  </thead>
+                {/* Tableau présents — séparé H / F */}
+                {(['H', 'F'] as const).map(genre => {
+                  const actifsGenre = actifs.filter(e => e.genre === genre)
+                  if (actifsGenre.length === 0) return null
+                  const montantGenre = actifsGenre.reduce((acc, e) => acc + getMontantJournee(e, j, data.config), 0)
+                  const presentsGenre = actifsGenre.filter(e => getStatutEmployeJournee(e, j) === 'present')
+                  return (
+                    <div key={genre} style={{ marginBottom: 10 }}>
+                      <div style={{ background: genre === 'H' ? '#1a3a5c' : '#5c1a3a', color: 'white', padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>
+                        {genre === 'H' ? '👨 HOMMES' : '👩 FEMMES'} — {presentsGenre.length} présent(s) / {actifsGenre.length}
+                      </div>
+                      <table style={styles.table}>
+                        <thead>
+                          <tr>
+                            <th style={{ ...styles.th, width: '5%', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>N°</th>
+                            <th style={{ ...styles.th, background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Nom & Prénom</th>
+                            <th style={{ ...styles.th, textAlign: 'right', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Taux/jour</th>
+                            <th style={{ ...styles.th, textAlign: 'right', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Montant</th>
+                            <th style={{ ...styles.th, textAlign: 'center', width: '120px', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Statut</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {actifsGenre.map((e, i) => {
+                            const statut = getStatutEmployeJournee(e, j)
+                            const present = statut === 'present'
+                            const taux = getTauxForEmploye(e, data.config)
+                            const montant = getMontantJournee(e, j, data.config)
+                            return (
+                              <tr key={e.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                                <td style={{ ...styles.td, color: '#888' }}>{i + 1}</td>
+                                <td style={{ ...styles.td, fontWeight: 600 }}>{e.prenom} {e.nom}</td>
+                                <td style={styles.tdRight}>{formatFCFA(taux)}</td>
+                                <td style={{ ...styles.tdRight, color: present ? '#1a5c2e' : '#aaa', fontWeight: present ? 700 : 400 }}>
+                                  {present ? formatFCFA(montant) : '—'}
+                                </td>
+                                <td style={{ ...styles.tdCenter }}>
+                                  {present
+                                    ? <span style={{ background: '#e8f5ec', color: '#1a5c2e', padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>PRÉSENT</span>
+                                    : <span style={{ background: '#fdecea', color: '#c0392b', padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>ABSENT</span>
+                                  }
+                                </td>
+                              </tr>
+                            )
+                          })}
+                          <tr style={styles.totalRow}>
+                            <td style={styles.td} colSpan={2}><strong>Sous-total {genre === 'H' ? 'Hommes' : 'Femmes'}</strong></td>
+                            <td style={styles.td} />
+                            <td style={{ ...styles.tdRight, color: '#c0392b' }}><strong>{formatFCFA(montantGenre)}</strong></td>
+                            <td style={{ ...styles.tdCenter, color: '#1a5c2e' }}><strong>{presentsGenre.length} / {actifsGenre.length}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                })}
+                {/* Total journée global */}
+                <table style={{ ...styles.table, marginTop: 4 }}>
                   <tbody>
-                    {actifs.map((e, i) => {
-                      const statut = getStatutEmployeJournee(e, j)
-                      const present = statut === 'present'
-                      const taux = getTauxForEmploye(e, data.config)
-                      const montant = getMontantJournee(e, j, data.config)
-                      return (
-                        <tr key={e.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                          <td style={{ ...styles.td, color: '#888' }}>{i + 1}</td>
-                          <td style={{ ...styles.td, fontWeight: 600 }}>{e.prenom} {e.nom}</td>
-                          <td style={styles.tdCenter}>{e.genre === 'H' ? 'Homme' : 'Femme'}</td>
-                          <td style={styles.tdRight}>{formatFCFA(taux)}</td>
-                          <td style={{ ...styles.tdRight, color: present ? '#1a5c2e' : '#aaa', fontWeight: present ? 700 : 400 }}>
-                            {present ? formatFCFA(montant) : '—'}
-                          </td>
-                          <td style={{ ...styles.tdCenter }}>
-                            {present
-                              ? <span style={{ background: '#e8f5ec', color: '#1a5c2e', padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>PRÉSENT</span>
-                              : <span style={{ background: '#fdecea', color: '#c0392b', padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>ABSENT</span>
-                            }
-                          </td>
-                        </tr>
-                      )
-                    })}
-                    <tr style={styles.totalRow}>
-                      <td style={styles.td} colSpan={3}><strong>TOTAL JOURNÉE</strong></td>
+                    <tr style={{ background: '#e8f0e8', fontWeight: 700 }}>
+                      <td style={{ ...styles.td, width: '5%' }} />
+                      <td style={{ ...styles.td }}><strong>TOTAL JOURNÉE</strong></td>
                       <td style={styles.td} />
                       <td style={{ ...styles.tdRight, color: '#c0392b' }}><strong>{formatFCFA(montantJour)}</strong></td>
                       <td style={{ ...styles.tdCenter, color: '#1a5c2e' }}><strong>{presents.length} / {actifs.length}</strong></td>
@@ -200,39 +223,61 @@ export default function RapportEmployesPage() {
         {journees.length > 0 && (
           <>
             <div style={styles.sectionTitle}>Récapitulatif session {session?.numero}</div>
+            {(['H', 'F'] as const).map(genre => {
+              const empGenre = employes.filter(e => e.genre === genre)
+              if (empGenre.length === 0) return null
+              const totalGenre = empGenre.reduce((acc, e) => acc + journees.reduce((a, j) => a + getMontantJournee(e, j, data.config), 0), 0)
+              const totalJoursGenre = empGenre.reduce((acc, e) => acc + journees.filter(j => getStatutEmployeJournee(e, j) === 'present').length, 0)
+              return (
+                <div key={genre} style={{ marginBottom: 18 }}>
+                  <div style={{ background: genre === 'H' ? '#1a3a5c' : '#5c1a3a', color: 'white', padding: '7px 14px', fontSize: 12, fontWeight: 700, marginBottom: 0 }}>
+                    {genre === 'H' ? '👨 HOMMES' : '👩 FEMMES'} — {empGenre.length} employé(s)
+                  </div>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...styles.th, width: '5%', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>N°</th>
+                        <th style={{ ...styles.th, background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Nom & Prénom</th>
+                        <th style={{ ...styles.th, textAlign: 'right', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Taux/jour</th>
+                        <th style={{ ...styles.th, textAlign: 'right', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Jours présents</th>
+                        <th style={{ ...styles.th, textAlign: 'right', background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Total à payer</th>
+                        <th style={{ ...styles.th, textAlign: 'center', minWidth: 100, background: genre === 'H' ? '#1a3a5c' : '#5c1a3a' }}>Signature</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {empGenre.map((e, idx) => {
+                        const taux = getTauxForEmploye(e, data.config)
+                        const joursP = journees.filter(j => getStatutEmployeJournee(e, j) === 'present').length
+                        const montant = journees.reduce((acc, j) => acc + getMontantJournee(e, j, data.config), 0)
+                        return (
+                          <tr key={e.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                            <td style={{ ...styles.td, color: '#888' }}>{idx + 1}</td>
+                            <td style={{ ...styles.td, fontWeight: 600 }}>{e.prenom} {e.nom}</td>
+                            <td style={styles.tdRight}>{formatFCFA(taux)}</td>
+                            <td style={{ ...styles.tdRight, fontWeight: 700 }}>{joursP}</td>
+                            <td style={{ ...styles.tdRight, color: '#1a5c2e', fontWeight: 700 }}>{formatFCFA(montant)}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                              <div style={{ borderBottom: '1px solid #999', height: 28, width: '80%', margin: '0 auto' }} />
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      <tr style={styles.totalRow}>
+                        <td style={styles.td} colSpan={3}><strong>Sous-total {genre === 'H' ? 'Hommes' : 'Femmes'}</strong></td>
+                        <td style={{ ...styles.tdRight }}><strong>{totalJoursGenre}</strong></td>
+                        <td style={{ ...styles.tdRight, color: '#c0392b' }}><strong>{formatFCFA(totalGenre)}</strong></td>
+                        <td />
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })}
+            {/* Total général */}
             <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={{ ...styles.th, width: '5%' }}>N°</th>
-                  <th style={styles.th}>Nom & Prénom</th>
-                  <th style={{ ...styles.th, textAlign: 'center' }}>Genre</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Taux/jour</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Jours présents</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Total à payer</th>
-                  <th style={{ ...styles.th, textAlign: 'center', minWidth: 100 }}>Signature</th>
-                </tr>
-              </thead>
               <tbody>
-                {employes.map((e, idx) => {
-                  const taux = getTauxForEmploye(e, data.config)
-                  const joursP = journees.filter(j => getStatutEmployeJournee(e, j) === 'present').length
-                  const montant = journees.reduce((acc, j) => acc + getMontantJournee(e, j, data.config), 0)
-                  return (
-                    <tr key={e.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                      <td style={{ ...styles.td, color: '#888' }}>{idx + 1}</td>
-                      <td style={{ ...styles.td, fontWeight: 600 }}>{e.prenom} {e.nom}</td>
-                      <td style={styles.tdCenter}>{e.genre === 'H' ? 'Homme' : 'Femme'}</td>
-                      <td style={styles.tdRight}>{formatFCFA(taux)}</td>
-                      <td style={{ ...styles.tdRight, fontWeight: 700 }}>{joursP}</td>
-                      <td style={{ ...styles.tdRight, color: '#1a5c2e', fontWeight: 700 }}>{formatFCFA(montant)}</td>
-                      <td style={{ ...styles.td, textAlign: 'center' }}>
-                        <div style={{ borderBottom: '1px solid #999', height: 28, width: '80%', margin: '0 auto' }} />
-                      </td>
-                    </tr>
-                  )
-                })}
-                <tr style={styles.totalRow}>
-                  <td style={styles.td} colSpan={4}><strong>TOTAL GÉNÉRAL</strong></td>
+                <tr style={{ background: '#e8f0e8', fontWeight: 700 }}>
+                  <td style={styles.td} colSpan={3}><strong>TOTAL GÉNÉRAL</strong></td>
                   <td style={{ ...styles.tdRight }}>
                     <strong>{journees.reduce((acc, j) => acc + employes.filter(e => getStatutEmployeJournee(e, j) === 'present').length, 0)}</strong>
                   </td>

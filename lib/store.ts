@@ -16,6 +16,8 @@ export interface Journee {
   absents: string[]
   ecartKg: number
   bonusJour?: number
+  bonusJourH?: number
+  bonusJourF?: number
 }
 
 export interface Session {
@@ -130,7 +132,10 @@ export function getTauxForEmploye(e: Employe, config: Config): number {
 
 export function getMontantJournee(e: Employe, j: Journee, config: Config): number {
   if (getStatutEmployeJournee(e, j) !== 'present') return 0
-  return getTauxForEmploye(e, config) + (j.bonusJour || 0)
+  const bonus = e.genre === 'H'
+    ? (j.bonusJourH ?? j.bonusJour ?? 0)
+    : (j.bonusJourF ?? j.bonusJour ?? 0)
+  return getTauxForEmploye(e, config) + bonus
 }
 
 export function getMontantTotal(e: Employe, journees: Journee[], config: Config): number {

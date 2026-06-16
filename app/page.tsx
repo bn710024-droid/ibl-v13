@@ -24,7 +24,8 @@ export default function SessionPage() {
   const [newDate, setNewDate] = useState(new Date().toISOString().slice(0, 10))
   const [sessionVue, setSessionVue] = useState<string | null>(null)
   const [bonusModal, setBonusModal] = useState<Journee | null>(null)
-  const [bonusInput, setBonusInput] = useState('')
+  const [bonusInputH, setBonusInputH] = useState('')
+  const [bonusInputF, setBonusInputF] = useState('')
   // Suppression session
   const [deleteModal, setDeleteModal] = useState<Session | null>(null)
   const [deletePin, setDeletePin] = useState('')
@@ -167,11 +168,17 @@ export default function SessionPage() {
 
   const saveBonus = () => {
     if (!bonusModal) return
-    const bonus = parseInt(bonusInput) || 0
-    const updated = { ...data, journees: data.journees.map(j => j.id === bonusModal.id ? { ...j, bonusJour: bonus > 0 ? bonus : undefined } : j) }
+    const bH = parseInt(bonusInputH) || 0
+    const bF = parseInt(bonusInputF) || 0
+    const updated = { ...data, journees: data.journees.map(j => j.id === bonusModal.id ? {
+      ...j,
+      bonusJour: undefined,
+      bonusJourH: bH > 0 ? bH : undefined,
+      bonusJourF: bF > 0 ? bF : undefined,
+    } : j) }
     setData(updated); saveData(updated)
-    setBonusModal(null); setBonusInput('')
-    toast(bonus > 0 ? `Bonus de ${formatFCFA(bonus)} enregistré` : 'Bonus supprimé', 'success')
+    setBonusModal(null); setBonusInputH(''); setBonusInputF('')
+    toast((bH > 0 || bF > 0) ? 'Bonus enregistré' : 'Bonus supprimé', 'success')
   }
 
   // ── SUPPRIMER SESSION ──
@@ -464,7 +471,13 @@ export default function SessionPage() {
                           <div style={{ fontWeight: 600, color: 'var(--white)', fontSize: 14 }}>{formatDate(j.date)}</div>
                           <div style={{ fontSize: 11, color: 'var(--gray-dim)', marginTop: 2 }}>
                             {presents} présent(s) · {j.absents.length} absent(s)
-                            {j.bonusJour ? <span style={{ color: 'var(--gold)', marginLeft: 8 }}>+{formatFCFA(j.bonusJour)} bonus</span> : null}
+                            {(j.bonusJourH || j.bonusJourF || j.bonusJour) ? (
+                              <span style={{ color: 'var(--gold)', marginLeft: 8 }}>
+                                {j.bonusJourH || j.bonusJour ? `H+${formatFCFA(j.bonusJourH ?? j.bonusJour ?? 0)}` : ''}
+                                {(j.bonusJourH || j.bonusJour) && (j.bonusJourF || j.bonusJour) ? ' · ' : ''}
+                                {j.bonusJourF || j.bonusJour ? `F+${formatFCFA(j.bonusJourF ?? j.bonusJour ?? 0)}` : ''}
+                              </span>
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -481,10 +494,10 @@ export default function SessionPage() {
                         )}
                         {!sessionVue && (
                           <>
-                            <button onClick={() => setBonusModal(j)} style={{
-                              background: j.bonusJour ? 'rgba(224,168,58,0.15)' : 'var(--forest-mid)',
-                              border: `1px solid ${j.bonusJour ? 'rgba(224,168,58,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                              color: j.bonusJour ? 'var(--gold)' : 'var(--gray)', borderRadius: 6,
+                            <button onClick={() => { setBonusModal(j); setBonusInputH((j.bonusJourH ?? j.bonusJour ?? '').toString()); setBonusInputF((j.bonusJourF ?? j.bonusJour ?? '').toString()) }} style={{
+                              background: (j.bonusJourH || j.bonusJourF || j.bonusJour) ? 'rgba(224,168,58,0.15)' : 'var(--forest-mid)',
+                              border: `1px solid ${(j.bonusJourH || j.bonusJourF || j.bonusJour) ? 'rgba(224,168,58,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                              color: (j.bonusJourH || j.bonusJourF || j.bonusJour) ? 'var(--gold)' : 'var(--gray)', borderRadius: 6,
                               padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontFamily: 'DM Sans, sans-serif'
                             }}>⚡ Bonus</button>
                             <button onClick={() => removeJournee(j.id)} style={{
@@ -627,17 +640,29 @@ export default function SessionPage() {
           <div className="card modal-card" style={{ padding: 28, width: 380 }}>
             <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--white)' }}>Bonus journée</h3>
             <p style={{ fontSize: 12, color: 'var(--gray)', marginBottom: 20 }}>{formatDate(bonusModal.date)} · s&apos;applique à tous les présents</p>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 6 }}>Montant du bonus (FCFA/personne)</label>
-              <input type="number" min="0" value={bonusInput} onChange={e => setBonusInput(e.target.value)}
-                placeholder={bonusModal.bonusJour ? bonusModal.bonusJour.toString() : 'ex: 1000'}
-                style={{ width: '100%', padding: '11px 14px', fontSize: 15 }} autoFocus />
-              {bonusModal.bonusJour && (
-                <p style={{ fontSize: 11, color: 'var(--gold)', marginTop: 6 }}>Bonus actuel : {formatFCFA(bonusModal.bonusJour)} · mettez 0 pour supprimer</p>
-              )}
+            <div style={{ marginBottom: 20, display: 'flex', gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 6 }}>👨 Hommes (FCFA)</label>
+                <input type="number" min="0" value={bonusInputH} onChange={e => setBonusInputH(e.target.value)}
+                  placeholder={bonusModal.bonusJourH ? bonusModal.bonusJourH.toString() : 'ex: 1000'}
+                  style={{ width: '100%', padding: '11px 14px', fontSize: 15 }} autoFocus />
+                {bonusModal.bonusJourH && (
+                  <p style={{ fontSize: 11, color: 'var(--gold)', marginTop: 6 }}>Actuel : {formatFCFA(bonusModal.bonusJourH)}</p>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 6 }}>👩 Femmes (FCFA)</label>
+                <input type="number" min="0" value={bonusInputF} onChange={e => setBonusInputF(e.target.value)}
+                  placeholder={bonusModal.bonusJourF ? bonusModal.bonusJourF.toString() : 'ex: 1000'}
+                  style={{ width: '100%', padding: '11px 14px', fontSize: 15 }} />
+                {bonusModal.bonusJourF && (
+                  <p style={{ fontSize: 11, color: 'var(--gold)', marginTop: 6 }}>Actuel : {formatFCFA(bonusModal.bonusJourF)}</p>
+                )}
+              </div>
             </div>
+            <p style={{ fontSize: 11, color: 'var(--gray-dim)', marginBottom: 16 }}>Mettez 0 pour supprimer un bonus</p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button onClick={() => { setBonusModal(null); setBonusInput('') }} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
+              <button onClick={() => { setBonusModal(null); setBonusInputH(''); setBonusInputF('') }} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
               <button className="btn-primary ripple" onClick={saveBonus} style={{ padding: '9px 18px', borderRadius: 8 }}>Enregistrer</button>
             </div>
           </div>

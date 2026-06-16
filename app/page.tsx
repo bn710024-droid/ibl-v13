@@ -125,7 +125,11 @@ export default function SessionPage() {
     if (data.journees.find(j => j.date === newDate)) {
       toast('Une journée pour cette date existe déjà.', 'error'); return
     }
-    const j: Journee = { id: genId(), sessionId: sessionActive.id, date: newDate, absents: [], ecartKg: 0 }
+    // Reprendre les absents de la journée précédente
+    const sortedJ = [...data.journees].sort((a, b) => b.date.localeCompare(a.date))
+    const veille = sortedJ.find(j => j.date < newDate)
+    const absentsVeille = veille ? veille.absents : []
+    const j: Journee = { id: genId(), sessionId: sessionActive.id, date: newDate, absents: absentsVeille, ecartKg: 0 }
     const updated = { ...data, journees: [...data.journees, j].sort((a, b) => a.date.localeCompare(b.date)) }
     setData(updated); saveData(updated)
     setShowJourneeModal(false)

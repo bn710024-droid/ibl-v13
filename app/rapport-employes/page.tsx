@@ -224,14 +224,18 @@ export default function RapportEmployesPage() {
           <>
             <div style={styles.sectionTitle}>Récapitulatif session {session?.numero}</div>
             {(['H', 'F'] as const).map(genre => {
-              const empGenre = employes.filter(e => e.genre === genre)
+              // Seulement les présents (au moins 1 journée présent)
+              const empGenre = employes.filter(e =>
+                e.genre === genre &&
+                journees.some(j => getStatutEmployeJournee(e, j) === 'present')
+              )
               if (empGenre.length === 0) return null
               const totalGenre = empGenre.reduce((acc, e) => acc + journees.reduce((a, j) => a + getMontantJournee(e, j, data.config), 0), 0)
               const totalJoursGenre = empGenre.reduce((acc, e) => acc + journees.filter(j => getStatutEmployeJournee(e, j) === 'present').length, 0)
               return (
                 <div key={genre} style={{ marginBottom: 18 }}>
                   <div style={{ background: genre === 'H' ? '#1a3a5c' : '#5c1a3a', color: 'white', padding: '7px 14px', fontSize: 12, fontWeight: 700, marginBottom: 0 }}>
-                    {genre === 'H' ? '👨 HOMMES' : '👩 FEMMES'} — {empGenre.length} employé(s)
+                    {genre === 'H' ? '👨 HOMMES' : '👩 FEMMES'} — {empGenre.length} présent(s)
                   </div>
                   <table style={styles.table}>
                     <thead>

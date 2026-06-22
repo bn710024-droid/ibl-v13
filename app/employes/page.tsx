@@ -402,7 +402,9 @@ export default function EmployesPage() {
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, color: 'var(--white)' }}>Employés</h1>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => {
-                const session = data.sessions.find(s => !s.fermee) || data.sessions[data.sessions.length - 1]
+                const activeSession = data.sessions.find(s => !s.fermee)
+                const hasJournees = activeSession && data.journees.some(j => j.sessionId === activeSession.id)
+                const session = hasJournees ? activeSession : [...data.sessions].reverse().find(s => data.journees.some(j => j.sessionId === s.id)) || activeSession
                 window.open(`/rapport-employes${session ? `?session=${session.id}` : ''}`, '_blank')
               }} style={{
                 padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13,

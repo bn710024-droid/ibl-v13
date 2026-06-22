@@ -18,6 +18,7 @@ export interface Journee {
   bonusJour?: number
   bonusJourH?: number
   bonusJourF?: number
+  bonusParEmploye?: Record<string, number>  // bonus individuel par employé (id → montant)
 }
 
 export interface Session {
@@ -135,7 +136,8 @@ export function getMontantJournee(e: Employe, j: Journee, config: Config): numbe
   const bonus = e.genre === 'H'
     ? (j.bonusJourH ?? j.bonusJour ?? 0)
     : (j.bonusJourF ?? j.bonusJour ?? 0)
-  return getTauxForEmploye(e, config) + bonus
+  const bonusIndividuel = j.bonusParEmploye?.[e.id] ?? 0
+  return getTauxForEmploye(e, config) + bonus + bonusIndividuel
 }
 
 export function getMontantTotal(e: Employe, journees: Journee[], config: Config): number {

@@ -24,15 +24,8 @@ export default function ProductionPage() {
   const [deleteCamionModal, setDeleteCamionModal] = useState<Camion | null>(null)
   const [deleteCamionPin, setDeleteCamionPin] = useState('')
   const [deleteCamionPinErr, setDeleteCamionPinErr] = useState('')
-  // Nouveau camion
-  const [showNewCamionModal, setShowNewCamionModal] = useState(false)
-  const [newCamionObjectif, setNewCamionObjectif] = useState('')
-  // Config objectif camion auto-créé (après surplus)
-  const [configCamionModal, setConfigCamionModal] = useState<string | null>(null)
-  const [configCamionObjectif, setConfigCamionObjectif] = useState('')
-  // Modifier objectif camion existant
-  const [editObjectifModal, setEditObjectifModal] = useState(false)
-  const [editObjectifVal, setEditObjectifVal] = useState('')
+  // Clôture manuelle camion
+  const [cloturerModal, setCloturerModal] = useState(false)
   const toast = useToast()
 
   useEffect(() => {
@@ -53,8 +46,6 @@ export default function ProductionPage() {
   const stats = getStatsProduction(journees)
   const depenses = camionAffiche ? getDepensesCamion(camionAffiche.id, data) : []
   const totalDepenses = depenses.reduce((a,d) => a + getMontantDepense(d), 0)
-  const progression = camionAffiche ? Math.min((stats.totalExportable / camionAffiche.objectifKg) * 100, 100) : 0
-  const kgRestants = camionAffiche ? Math.max(camionAffiche.objectifKg - stats.totalExportable, 0) : 0
   const statsGlobal = getStatsProduction(data.journeesProduction)
 
   const creerCamion = (numero?: number, objectifKg?: number): Camion => ({
@@ -65,25 +56,23 @@ export default function ProductionPage() {
     statut: 'en_cours'
   })
 
-  const creerCamionAvecObjectif = () => {
-    const objectif = parseFloat(newCamionObjectif) || data.config.objectifCamionKg
-    const c = creerCamion(undefined, objectif)
+  const creerNouveauCamion = () => {
+    const c = creerCamion()
     const updated = { ...data, camions: [...data.camions, c] }
     setData(updated); saveData(updated)
-    setShowNewCamionModal(false); setNewCamionObjectif('')
-    toast(`Camion ${c.numero} créé — objectif ${objectif.toLocaleString()} kg`, 'success')
+    toast(`Camion ${c.numero} créé`, 'success')
   }
 
-  const mettreAJourObjectifCamion = () => {
-    if (!configCamionModal || !data) return
-    const objectif = parseFloat(configCamionObjectif) || data.config.objectifCamionKg
+  const cloturerCamion = () => {
+    if (!camionAffiche) return
     const updated = {
       ...data,
-      camions: data.camions.map(c => c.id === configCamionModal ? { ...c, objectifKg: objectif } : c)
+      camions: data.camions.map(c => c.id === camionAffiche.id
+        ? { ...c, statut: 'cloture' as const, dateFin: new Date().toISOString().slice(0,10) } : c)
     }
     setData(updated); saveData(updated)
-    setConfigCamionModal(null)
-    toast(`Objectif Camion ${data.camions.find(c=>c.id===configCamionModal)?.numero} : ${objectif.toLocaleString()} kg`, 'success')
+    setCloturerModal(false)
+    toast(`Camion ${camionAffiche.numero} clôturé`, 'success')
   }
 
   const ouvrirEditJournee = (j: JourneeProduction) => {
@@ -100,114 +89,28 @@ export default function ProductionPage() {
     const recu = parseFloat(volumeRecu)
     const ecart = parseFloat(volumeEcart) || 0
     if (ecart > recu) { toast('Écart ne peut pas dépasser le volume reçu', 'error'); return }
-    const exportable = recu - ecart
 
-    // Calcul cumul avant cette journée
-    const journeesExistantes = getJourneesCamion(camionAffiche.id, data)
-      .filter(j => editJournee ? j.id !== editJournee.id : true)
-    const statsAvant = getStatsProduction(journeesExistantes)
-    const cumulAvant = statsAvant.totalExportable
-
-    const objectif = camionAffiche.objectifKg
-    const nouveauCumul = cumulAvant + exportable
-
-    let updated = { ...data }
-
-    if (nouveauCumul > objectif && camionAffiche.statut !== 'cloture') {
-      // Surplus → split automatique
-      const pourCamion1 = objectif - cumulAvant
-      const surplus = exportable - pourCamion1
-      // Ratio pour calculer les écarts proportionnels
-      const ratio1 = pourCamion1 / exportable
-      const ecart1 = Math.round(ecart * ratio1)
-      const recu1 = pourCamion1 + ecart1
-
-      const journee1: JourneeProduction = {
-        id: editJournee?.id || genId(),
-        camionId: camionAffiche.id,
-        date: dateJ,
-        volumeRecuKg: recu1,
-        volumeEcartKg: ecart1,
-        produit: produit.trim() || undefined
-      }
-
-      // Clôture camion 1
-      updated = {
-        ...updated,
-        camions: updated.camions.map(c =>
-          c.id === camionAffiche.id
-            ? { ...c, statut: 'cloture' as const, dateFin: dateJ }
-            : c
-        ),
-        journeesProduction: editJournee
-          ? updated.journeesProduction.map(j => j.id === editJournee.id ? journee1 : j)
-          : [...updated.journeesProduction, journee1]
-      }
-      updated = syncDepenseProduction(updated, journee1, camionAffiche.id)
-
-      // Création camion 2 avec surplus
-      if (surplus > 0) {
-        const nouveauCamion = creerCamion(data.camions.length + 1)
-        const ecart2 = ecart - ecart1
-        const recu2 = surplus + ecart2
-        const journee2: JourneeProduction = {
-          id: genId(),
-          camionId: nouveauCamion.id,
-          date: dateJ,
-          volumeRecuKg: recu2,
-          volumeEcartKg: ecart2,
-          produit: produit.trim() || undefined
-        }
-        updated = {
-          ...updated,
-          camions: [...updated.camions, nouveauCamion],
-          journeesProduction: [...updated.journeesProduction, journee2]
-        }
-        updated = syncDepenseProduction(updated, journee2, nouveauCamion.id)
-        toast(`Camion ${camionAffiche.numero} cloture ! Surplus ${surplus.toLocaleString()} kg -> Camion ${nouveauCamion.numero}`, 'success')
-        // Ouvrir le modal de config objectif pour le nouveau camion
-        setConfigCamionObjectif(data.config.objectifCamionKg.toString())
-        setConfigCamionModal(nouveauCamion.id)
-      } else {
-        toast(`Camion ${camionAffiche.numero} cloture automatiquement !`, 'success')
-      }
-
-    } else {
-      // Journée normale
-      const journeeData: JourneeProduction = {
-        id: editJournee?.id || genId(),
-        camionId: camionAffiche.id,
-        date: dateJ,
-        volumeRecuKg: recu,
-        volumeEcartKg: ecart,
-        produit: produit.trim() || undefined
-      }
-      updated = {
-        ...updated,
-        journeesProduction: editJournee
-          ? updated.journeesProduction.map(j => j.id === editJournee.id ? journeeData : j)
-          : [...updated.journeesProduction, journeeData]
-      }
-      updated = syncDepenseProduction(updated, journeeData, camionAffiche.id)
-
-      // Vérif si objectif exact atteint
-      if (nouveauCumul >= objectif && camionAffiche.statut === 'en_cours') {
-        updated = {
-          ...updated,
-          camions: updated.camions.map(c =>
-            c.id === camionAffiche.id ? { ...c, statut: 'cloture' as const, dateFin: dateJ } : c
-          )
-        }
-        toast(`🚛 Camion ${camionAffiche.numero} clôturé — objectif atteint !`, 'success')
-      } else {
-        toast(editJournee ? 'Journée modifiée' : 'Journée enregistrée', 'success')
-      }
+    const journeeData: JourneeProduction = {
+      id: editJournee?.id || genId(),
+      camionId: camionAffiche.id,
+      date: dateJ,
+      volumeRecuKg: recu,
+      volumeEcartKg: ecart,
+      produit: produit.trim() || undefined
     }
+    let updated = {
+      ...data,
+      journeesProduction: editJournee
+        ? data.journeesProduction.map(j => j.id === editJournee.id ? journeeData : j)
+        : [...data.journeesProduction, journeeData]
+    }
+    updated = syncDepenseProduction(updated, journeeData, camionAffiche.id)
 
     setData(updated); saveData(updated)
     setShowAddJournee(false); setEditJournee(null)
     setVolumeRecu(''); setVolumeEcart(''); setProduit('')
     setDateJ(new Date().toISOString().slice(0,10))
+    toast(editJournee ? 'Journée modifiée' : 'Journée enregistrée', 'success')
   }
 
   // ── SUPPRIMER CAMION ──
@@ -272,20 +175,21 @@ export default function ProductionPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
             <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, color: 'var(--white)' }}>Production</h1>
-            <p style={{ color: 'var(--gray)', marginTop: 4, fontSize: 13 }}>
-              Objectif par camion : {data.config.objectifCamionKg.toLocaleString()} kg exportables
-            </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {!camionActif && (
-              <button className="btn-primary ripple" onClick={() => {
-                setNewCamionObjectif(data.config.objectifCamionKg.toString())
-                setShowNewCamionModal(true)
-              }} style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>🚛 Nouveau camion</button>
+              <button className="btn-primary ripple" onClick={creerNouveauCamion} style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>🚛 Nouveau camion</button>
             )}
             {camionActif && (
-              <button onClick={() => { setEditJournee(null); setVolumeRecu(''); setVolumeEcart(''); setProduit(''); setDateJ(new Date().toISOString().slice(0,10)); setShowAddJournee(true) }}
-                className="btn-primary ripple" style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>+ Journée</button>
+              <>
+                <button onClick={() => { setEditJournee(null); setVolumeRecu(''); setVolumeEcart(''); setProduit(''); setDateJ(new Date().toISOString().slice(0,10)); setShowAddJournee(true) }}
+                  className="btn-primary ripple" style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>+ Journée</button>
+                <button onClick={() => setCloturerModal(true)} style={{
+                  padding: '9px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                  background: 'var(--forest-mid)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--gray)',
+                  fontFamily: 'DM Sans, sans-serif'
+                }}>✓ Clôturer camion</button>
+              </>
             )}
           </div>
         </div>
@@ -337,38 +241,18 @@ export default function ProductionPage() {
           <div className="card" style={{ padding: 50, textAlign: 'center', color: 'var(--gray-dim)' }}>
             <div style={{ fontSize: 48, marginBottom: 14 }}>🚛</div>
             <p style={{ fontSize: 15, marginBottom: 20 }}>Aucun camion actif.</p>
-            <button className="btn-primary ripple" onClick={() => {
-              setNewCamionObjectif(data.config.objectifCamionKg.toString())
-              setShowNewCamionModal(true)
-            }} style={{ padding: '11px 24px', borderRadius: 9, fontSize: 14 }}>Créer le premier camion</button>
+            <button className="btn-primary ripple" onClick={creerNouveauCamion} style={{ padding: '11px 24px', borderRadius: 9, fontSize: 14 }}>Créer le premier camion</button>
           </div>
         ) : (
           <>
-            {/* Barre progression */}
-            <div className="card stripe-red" style={{ padding: '16px 20px', marginBottom: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
-                  🚛 Camion {camionAffiche.numero} — <span style={{ color: statutColor(camionAffiche.statut) }}>{statutLabel(camionAffiche.statut)}</span>
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 13, color: 'var(--gray)' }}>
-                    <span style={{ color: 'var(--green)', fontWeight: 700 }}>{stats.totalExportable.toLocaleString()}</span> / {camionAffiche.objectifKg.toLocaleString()} kg
-                    {kgRestants > 0 && <span style={{ color: 'var(--gray-dim)', marginLeft: 8 }}>· {kgRestants.toLocaleString()} kg restants</span>}
-                  </span>
-                  <button onClick={() => { setEditObjectifVal(camionAffiche.objectifKg.toString()); setEditObjectifModal(true) }}
-                    title="Modifier l'objectif"
-                    style={{ background: 'var(--forest-mid)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--gray)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 12 }}>
-                    ✏
-                  </button>
-                </div>
-              </div>
-              <div style={{ height: 10, borderRadius: 5, background: 'var(--forest-mid)', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 5, width: `${progression}%`,
-                  background: progression >= 100 ? 'var(--gold)' : 'linear-gradient(90deg, var(--green), #5cb87a)',
-                  transition: 'width 0.8s ease'
-                }} />
-              </div>
+            {/* Info camion */}
+            <div className="card stripe-red" style={{ padding: '14px 20px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)' }}>
+                🚛 Camion {camionAffiche.numero} — <span style={{ color: statutColor(camionAffiche.statut) }}>{statutLabel(camionAffiche.statut)}</span>
+              </span>
+              <span style={{ fontSize: 14, color: 'var(--green)', fontWeight: 700 }}>
+                {stats.totalExportable.toLocaleString()} kg exportés
+              </span>
             </div>
 
             {/* KPIs */}
@@ -528,24 +412,6 @@ export default function ProductionPage() {
                   </div>
                 </div>
               )}
-              {/* Avertissement surplus */}
-              {volumeRecu && camionAffiche && (() => {
-                const exportable = parseFloat(volumeRecu) - (parseFloat(volumeEcart)||0)
-                const journeesEx = getJourneesCamion(camionAffiche.id, data).filter(j => editJournee ? j.id !== editJournee.id : true)
-                const cumul = getStatsProduction(journeesEx).totalExportable
-                const surplus = (cumul + exportable) - camionAffiche.objectifKg
-                if (surplus > 0) return (
-                  <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(224,168,58,0.1)', border: '1px solid rgba(224,168,58,0.3)' }}>
-                    <p style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 600 }}>
-                      ⚡ Camion {camionAffiche.numero} sera clôturé automatiquement
-                    </p>
-                    <p style={{ fontSize: 11, color: 'var(--gray)', marginTop: 3 }}>
-                      Surplus de {surplus.toLocaleString()} kg → Camion {data.camions.length + 1} (nouveau)
-                    </p>
-                  </div>
-                )
-                return null
-              })()}
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
               <button onClick={() => { setShowAddJournee(false); setEditJournee(null) }} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
@@ -555,104 +421,26 @@ export default function ProductionPage() {
         </div>
       )}
 
-      {/* ── MODAL MODIFIER OBJECTIF ── */}
-      {editObjectifModal && camionAffiche && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }}>
-          <div className="card modal-card" style={{ padding: 28, width: 360 }}>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--white)' }}>
-              ✏ Modifier l'objectif — Camion {camionAffiche.numero}
-            </h3>
-            <p style={{ fontSize: 12, color: 'var(--gray)', marginBottom: 16 }}>
-              Objectif actuel : <strong style={{ color: 'var(--green)' }}>{camionAffiche.objectifKg.toLocaleString()} kg</strong>
-            </p>
-            <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Nouvel objectif (kg exportables)</label>
-            <input type="number" min="1" value={editObjectifVal}
-              onChange={e => setEditObjectifVal(e.target.value)}
-              style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus />
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
-              <button onClick={() => setEditObjectifModal(false)} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
-              <button className="btn-primary ripple" onClick={() => {
-                const objectif = parseFloat(editObjectifVal)
-                if (!objectif || objectif <= 0) return
-                const updated = { ...data, camions: data.camions.map(c => c.id === camionAffiche.id ? { ...c, objectifKg: objectif } : c) }
-                setData(updated); saveData(updated)
-                setEditObjectifModal(false)
-                toast(`Objectif mis a jour : ${objectif.toLocaleString()} kg`, 'success')
-              }} style={{ padding: '9px 18px', borderRadius: 8 }}>Enregistrer</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL NOUVEAU CAMION ── */}
-      {showNewCamionModal && (
+      {/* ── MODAL CLÔTURER CAMION ── */}
+      {cloturerModal && camionAffiche && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }}>
           <div className="card modal-card" style={{ padding: 28, width: 380 }}>
-            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--white)' }}>
-              🚛 Nouveau camion
+            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 10, color: 'var(--white)' }}>
+              ✓ Clôturer Camion {camionAffiche.numero}
             </h3>
-            <p style={{ fontSize: 12, color: 'var(--gray)', marginBottom: 18 }}>
-              Définissez l'objectif en kg exportables pour ce camion.
+            <p style={{ fontSize: 13, color: 'var(--gray)', marginBottom: 6 }}>
+              Total exporté : <strong style={{ color: 'var(--green)' }}>{stats.totalExportable.toLocaleString()} kg</strong>
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Objectif exportable (kg)</label>
-                <input
-                  type="number" min="1" value={newCamionObjectif}
-                  onChange={e => setNewCamionObjectif(e.target.value)}
-                  placeholder={`ex: ${data.config.objectifCamionKg.toLocaleString()}`}
-                  style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus
-                />
-                <p style={{ fontSize: 11, color: 'var(--gray-dim)', marginTop: 5 }}>
-                  Défaut config : {data.config.objectifCamionKg.toLocaleString()} kg
-                </p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
-              <button onClick={() => { setShowNewCamionModal(false); setNewCamionObjectif('') }} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
-              <button className="btn-primary ripple" onClick={creerCamionAvecObjectif} style={{ padding: '9px 18px', borderRadius: 8 }}>
-                Créer le camion
-              </button>
+            <p style={{ fontSize: 12, color: 'var(--gray-dim)', marginBottom: 20 }}>
+              Le camion sera marqué clôturé. Vous pourrez créer un nouveau camion ensuite.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setCloturerModal(false)} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Annuler</button>
+              <button className="btn-primary ripple" onClick={cloturerCamion} style={{ padding: '9px 18px', borderRadius: 8 }}>Clôturer</button>
             </div>
           </div>
         </div>
       )}
-
-      {/* ── MODAL CONFIG OBJECTIF CAMION AUTO-CRÉÉ ── */}
-      {configCamionModal && (() => {
-        const camion = data.camions.find(c => c.id === configCamionModal)
-        if (!camion) return null
-        return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 250, backdropFilter: 'blur(4px)' }}>
-            <div className="card modal-card" style={{ padding: 28, width: 400 }}>
-              <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, marginBottom: 6, color: 'var(--gold)' }}>
-                ⚡ Configurer Camion {camion.numero}
-              </h3>
-              <p style={{ fontSize: 12, color: 'var(--gray)', marginBottom: 18, lineHeight: 1.6 }}>
-                Le Camion {camion.numero} vient d'être créé automatiquement avec le surplus. Définissez son objectif en kg exportables.
-              </p>
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Objectif exportable (kg)</label>
-                <input
-                  type="number" min="1" value={configCamionObjectif}
-                  onChange={e => setConfigCamionObjectif(e.target.value)}
-                  placeholder={`ex: ${data.config.objectifCamionKg.toLocaleString()}`}
-                  style={{ width: '100%', padding: '10px 14px', fontSize: 14 }} autoFocus
-                />
-                <p style={{ fontSize: 11, color: 'var(--gray-dim)', marginTop: 5 }}>
-                  Défaut : {data.config.objectifCamionKg.toLocaleString()} kg — modifiez si cet objectif est différent
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
-                <button onClick={() => setConfigCamionModal(null)} className="btn-ghost" style={{ padding: '9px 16px', borderRadius: 8 }}>Garder le défaut</button>
-                <button className="btn-primary ripple" onClick={mettreAJourObjectifCamion} style={{ padding: '9px 18px', borderRadius: 8 }}>
-                  Confirmer l'objectif
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
 
       {/* ── MODAL SUPPRIMER CAMION ── */}
       {deleteCamionModal && (

@@ -6,7 +6,7 @@ import { useToast } from '@/components/Toast'
 import { useCountUp } from '@/hooks/useCountUp'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import {
-  loadData, saveData, genId, formatFCFA, formatDate,
+  loadData, saveData, exportBackupJSON, genId, formatFCFA, formatDate,
   AppData, Journee, Session, getTauxForEmploye, getMontantJournee,
   getSessionActive, getJourneesSession, getStatutEmployeJournee
 } from '@/lib/store'
@@ -571,6 +571,44 @@ export default function SessionPage() {
               <button onClick={changerPin} style={{ padding: '9px 18px', borderRadius: 8, background: 'var(--forest-light)', border: '1px solid rgba(92,184,122,0.3)', color: 'var(--green)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 13 }}>
                 Changer le PIN
               </button>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', marginBottom: 22 }} />
+
+            {/* SAUVEGARDE / RESTAURATION */}
+            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(245,240,232,0.4)', marginBottom: 12 }}>Sauvegarde</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 26 }}>
+              <button onClick={() => exportBackupJSON(data)} style={{
+                width: '100%', padding: '11px', borderRadius: 8, cursor: 'pointer',
+                background: 'rgba(61,176,106,0.08)', border: '1px solid rgba(61,176,106,0.3)',
+                color: 'var(--green)', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 13
+              }}>
+                ⬇ Télécharger sauvegarde JSON
+              </button>
+              <label style={{
+                width: '100%', padding: '11px', borderRadius: 8, cursor: 'pointer',
+                background: 'rgba(224,168,58,0.08)', border: '1px solid rgba(224,168,58,0.3)',
+                color: 'var(--gold)', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 13,
+                textAlign: 'center', boxSizing: 'border-box'
+              }}>
+                ⬆ Restaurer depuis fichier JSON
+                <input type="file" accept=".json" style={{ display: 'none' }} onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = ev => {
+                    try {
+                      const parsed = JSON.parse(ev.target?.result as string)
+                      if (!parsed.employes || !parsed.config) { alert('Fichier invalide'); return }
+                      if (!confirm(`Restaurer ${parsed.employes.length} employés et ${parsed.journees?.length || 0} journées ?`)) return
+                      setData(parsed); saveData(parsed)
+                      setShowConfig(false)
+                    } catch { alert('Erreur lecture fichier') }
+                  }
+                  reader.readAsText(file)
+                  e.target.value = ''
+                }} />
+              </label>
             </div>
 
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', marginBottom: 22 }} />

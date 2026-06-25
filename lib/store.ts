@@ -106,10 +106,29 @@ export function loadData(): AppData {
 export function saveData(data: AppData) {
   if (typeof window === 'undefined') return
   localStorage.setItem('ibl-primeurs-data', JSON.stringify(data))
+  // Snapshot quotidien (une seule fois par jour, uniquement si données non vides)
+  if (data.employes.length > 0) {
+    const today = new Date().toISOString().slice(0, 10)
+    const backupKey = `ibl-backup-${today}`
+    if (!localStorage.getItem(backupKey)) {
+      localStorage.setItem(backupKey, JSON.stringify(data))
+    }
+  }
   // Sync vers Supabase en arrière-plan
   import('@/lib/supabase').then(({ pushRemoteData }) => {
     pushRemoteData(data)
   }).catch(() => {})
+}
+
+export function exportBackupJSON(data: AppData): void {
+  const date = new Date().toISOString().slice(0, 10)
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `ibl-backup-${date}.json`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 export function genId(): string {

@@ -27,6 +27,11 @@ export async function fetchRemoteData(): Promise<AppData | null> {
 // ── Sauvegarder les données dans Supabase ──
 export async function pushRemoteData(appData: AppData): Promise<void> {
   if (!supabase) return
+  // Garde de sécurité : refuser tout push qui effacerait les employés
+  if (appData.employes.length === 0) {
+    console.warn('[Supabase] Push bloqué — aucun employé détecté')
+    return
+  }
   try {
     await supabase
       .from('ibl_data')

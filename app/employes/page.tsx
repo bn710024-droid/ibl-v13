@@ -123,7 +123,23 @@ export default function EmployesPage() {
     const [sessionVue, setSessionVue] = useState<string | null>(null)
     const [showSortieInput, setShowSortieInput] = useState(false)
     const [sortieDate, setSortieDate] = useState(e.dateSortie || '')
+    const [showPaiementInput, setShowPaiementInput] = useState(false)
+    const [paiementInput, setPaiementInput] = useState(e.paiementRecu?.toString() || '')
     const taux = getTauxForEmploye(e, data.config)
+
+    const savePaiement = () => {
+      const montant = parseFloat(paiementInput) || 0
+      const updated = {
+        ...data,
+        employes: data.employes.map(emp => emp.id === e.id
+          ? { ...emp, paiementRecu: montant > 0 ? montant : undefined }
+          : emp)
+      }
+      setData(updated); saveData(updated)
+      setSelected(updated.employes.find(emp => emp.id === e.id) || null)
+      setShowPaiementInput(false)
+      toast('Paiement enregistré', 'success')
+    }
 
     const sessionActive = data.sessions.find(s => !s.fermee) || null
     const sessionAffichee = sessionVue
@@ -232,6 +248,52 @@ export default function EmployesPage() {
             </div>
           ))}
         </div>
+
+        {/* Paiement individuel */}
+        {(() => {
+          const du = montantTotal
+          const paye = e.paiementRecu || 0
+          const solde = du - paye
+          return (
+            <div className="card stripe-green" style={{ padding: '16px 18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showPaiementInput ? 12 : 0 }}>
+                <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Montant dû</div>
+                    <div style={{ fontSize: 16, color: 'var(--white)', fontWeight: 700, fontFamily: 'Playfair Display, serif' }}>{formatFCFA(du)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Montant payé</div>
+                    <div style={{ fontSize: 16, color: paye > 0 ? 'var(--green)' : 'var(--gray-dim)', fontWeight: 700, fontFamily: 'Playfair Display, serif' }}>
+                      {paye > 0 ? formatFCFA(paye) : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--gray-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Solde restant</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'Playfair Display, serif', color: solde === 0 ? 'var(--green)' : solde < 0 ? 'var(--gold)' : 'var(--red-bright)' }}>
+                      {solde === 0 ? '✓ Soldé' : formatFCFA(Math.abs(solde))} {solde < 0 ? '(trop payé)' : ''}
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => { setShowPaiementInput(!showPaiementInput); setPaiementInput(e.paiementRecu?.toString() || '') }}
+                  style={{ background: 'var(--green-muted)', border: '1px solid rgba(61,176,106,0.3)', color: 'var(--green)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap' }}>
+                  ✏ Saisir paiement
+                </button>
+              </div>
+              {showPaiementInput && (
+                <div className="fade-in" style={{ display: 'flex', gap: 10, alignItems: 'flex-end', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: 'var(--gray)', display: 'block', marginBottom: 5 }}>Montant versé (FCFA)</label>
+                    <input type="number" min="0" value={paiementInput} onChange={ev => setPaiementInput(ev.target.value)}
+                      placeholder={`ex: ${du.toLocaleString()}`} style={{ width: '100%', padding: '9px 12px', fontSize: 14 }} autoFocus />
+                  </div>
+                  <button className="btn-primary ripple" onClick={savePaiement} style={{ padding: '9px 16px', borderRadius: 8, fontSize: 13 }}>Enregistrer</button>
+                  <button className="btn-ghost" onClick={() => setShowPaiementInput(false)} style={{ padding: '9px 12px', borderRadius: 8, fontSize: 13 }}>✕</button>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Récap par session */}
         {data.sessions.length > 0 && (

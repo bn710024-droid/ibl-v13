@@ -7,6 +7,7 @@ export interface Employe {
   dateEmbauche?: string   // date réelle d'embauche (= dateAjout si non renseigné)
   dateSortie?: string
   tauxIndividuel?: number
+  paiementRecu?: number   // montant réellement versé à l'employé
 }
 
 export interface Journee {
